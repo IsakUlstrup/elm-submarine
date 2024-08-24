@@ -323,11 +323,11 @@ viewSubmarine ( particle, submarine ) =
         ]
 
 
-viewCompass : Float -> Svg msg
+viewCompass : Vector2 -> Svg msg
 viewCompass bearing =
     let
         ( x2, y2 ) =
-            ( cos bearing * 35, sin bearing * 35 )
+            ( bearing.x * 35, bearing.y * 35 )
     in
     Svg.g []
         [ Svg.circle [ Svg.Attributes.r "50", Svg.Attributes.fill "white" ] []
@@ -420,11 +420,10 @@ view model =
                 [ Html.text "Rudder: "
                 , Html.text (model.submarineState.rudder |> prettyFloat)
                 ]
-
-            -- , Svg.svg
-            --     [ Svg.Attributes.viewBox "-50 -50 100 100"
-            --     ]
-            --     [ viewCompass (Vector2.angleRadian model.submarineParticle.orientation) ]
+            , Svg.svg
+                [ Svg.Attributes.viewBox "-50 -50 100 100"
+                ]
+                [ viewCompass model.submarineParticle.orientation ]
             ]
         , Html.section [ Html.Attributes.class "game-view" ]
             [ Svg.svg
