@@ -10,6 +10,7 @@ module Engine.Vector2 exposing
     , magnitude
     , mapX
     , mapY
+    , orthogonal
     , rotate
     , scale
     , subtract
@@ -128,3 +129,8 @@ angleDegrees vector =
 east : Vector2
 east =
     Vector2 1 0
+
+
+orthogonal : Vector2 -> Vector2
+orthogonal { x, y } =
+    new y -x

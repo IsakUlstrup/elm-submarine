@@ -260,7 +260,12 @@ viewSubmarine ( particle, submarine ) =
             , Svg.Attributes.fill "white"
             ]
             []
-        , Svg.g [ Svg.Attributes.transform "translate(0, -50)", Svg.Attributes.fontSize "0.8rem" ]
+        , Svg.g
+            [ Svg.Attributes.transform "translate(0, -50)"
+            , Svg.Attributes.fontSize "0.8rem"
+            , Svg.Attributes.stroke "white"
+            , Svg.Attributes.strokeWidth "0.3"
+            ]
             [ Svg.text_
                 [ Svg.Attributes.fill "red"
                 , Svg.Attributes.transform "translate(0, -30)"
@@ -270,7 +275,7 @@ viewSubmarine ( particle, submarine ) =
                 [ Svg.Attributes.fill "green"
                 , Svg.Attributes.transform "translate(0, -20)"
                 ]
-                [ Svg.text "rudder" ]
+                [ Svg.text "orthogonal orientation" ]
             , Svg.text_
                 [ Svg.Attributes.fill "orange"
                 , Svg.Attributes.transform "translate(0, -10)"
@@ -286,7 +291,7 @@ viewSubmarine ( particle, submarine ) =
                 particle.orientation
             , viewVector
                 [ Svg.Attributes.stroke "green" ]
-                (particle.orientation |> Vector2.rotate submarine.rudder)
+                (Vector2.orthogonal particle.orientation |> Vector2.scale -submarine.rudder)
             , viewVector
                 [ Svg.Attributes.stroke "orange" ]
                 (particle |> Particle.velocity)
