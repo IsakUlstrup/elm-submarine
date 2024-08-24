@@ -1,9 +1,9 @@
-module Main exposing (Model, Msg, main)
+module Main exposing (Model, Msg, Submarine, main)
 
 import Browser
 import Browser.Events
 import Engine.Particle as Particle exposing (Particle)
-import Engine.Vector2 as Vector2
+import Engine.Vector2 as Vector2 exposing (Vector2)
 import Html exposing (Html, main_)
 import Html.Attributes
 import Html.Events
@@ -29,12 +29,14 @@ tickControls dt submarine =
     { submarine
         | throttle =
             let
+                diff : Float
                 diff =
                     submarine.throttleInput - submarine.throttle
             in
             submarine.throttle + (diff * dt * 0.003) |> clamp -1 1
         , rudder =
             let
+                diff : Float
                 diff =
                     submarine.rudderInput - submarine.rudder
             in
@@ -59,14 +61,14 @@ setRudderInput r submarine =
 applyThrust : Model -> Model
 applyThrust model =
     let
+        enginePower : Float
         enginePower =
             0.01
 
+        force : Vector2
         force =
             model.submarineParticle.orientation
                 |> Vector2.scale (model.submarineState.throttle * enginePower)
-
-        -- |> (\v -> { v | y = -v.y })
     in
     { model
         | submarineParticle = Particle.applyForce force model.submarineParticle
@@ -76,6 +78,7 @@ applyThrust model =
 applyRotation : Model -> Model
 applyRotation model =
     let
+        steeringAuthority : Float
         steeringAuthority =
             0.001
     in
