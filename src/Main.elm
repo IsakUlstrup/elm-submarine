@@ -75,6 +75,29 @@ applyThrust model =
     }
 
 
+rudderForce : Model -> Model
+rudderForce model =
+    let
+        force =
+            Vector2.orthogonal model.submarineParticle.orientation
+                |> Vector2.scale model.submarineState.rudder
+                |> Vector2.scale (Particle.velocity model.submarineParticle |> Vector2.magnitude |> min 1)
+                |> Vector2.scale 0.01
+
+        frictionForce =
+            force
+                |> Vector2.scale
+                    ((Particle.velocity model.submarineParticle |> Vector2.magnitude) - Vector2.magnitude force)
+                |> Vector2.scale -1
+    in
+    { model
+        | submarineParticle =
+            model.submarineParticle
+                |> Particle.applyForce force
+                |> Particle.applyForce frictionForce
+    }
+
+
 applyRotation : Model -> Model
 applyRotation model =
     let
@@ -153,6 +176,7 @@ update msg model =
                 |> stepParticle dt
                 |> controlsUpdate dt
                 |> applyThrust
+                |> rudderForce
                 |> applyRotation
                 |> friction
             , Cmd.none
@@ -396,10 +420,11 @@ view model =
                 [ Html.text "Rudder: "
                 , Html.text (model.submarineState.rudder |> prettyFloat)
                 ]
-            , Svg.svg
-                [ Svg.Attributes.viewBox "-50 -50 100 100"
-                ]
-                [ viewCompass (Vector2.angleRadian model.submarineParticle.orientation) ]
+
+            -- , Svg.svg
+            --     [ Svg.Attributes.viewBox "-50 -50 100 100"
+            --     ]
+            --     [ viewCompass (Vector2.angleRadian model.submarineParticle.orientation) ]
             ]
         , Html.section [ Html.Attributes.class "game-view" ]
             [ Svg.svg
