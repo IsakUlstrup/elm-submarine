@@ -1,13 +1,18 @@
 module Engine.Vector2 exposing
     ( Vector2
     , add
+    , angleDegrees
+    , angleRadian
     , direction
     , distance
     , divide
+    , east
     , magnitude
     , mapX
     , mapY
     , new
+    , normalize
+    , rotate
     , scale
     , subtract
     , toString
@@ -108,3 +113,26 @@ direction origin target =
 zero : Vector2
 zero =
     new 0 0
+
+
+rotate : Float -> Vector2 -> Vector2
+rotate theta vector =
+    { vector
+        | x = (vector.x * cos theta) - (vector.y * sin theta)
+        , y = (vector.x * sin theta) + (vector.y * cos theta)
+    }
+
+
+angleRadian : Vector2 -> Float
+angleRadian { x, y } =
+    atan2 x y - (pi / 2)
+
+
+angleDegrees : Vector2 -> Float
+angleDegrees vector =
+    (angleRadian vector * 180) / pi
+
+
+east : Vector2
+east =
+    Vector2 1 0

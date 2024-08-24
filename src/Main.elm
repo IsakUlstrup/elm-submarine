@@ -61,13 +61,15 @@ applyThrust model =
     let
         enginePower =
             0.01
+
+        force =
+            model.submarineParticle.orientation
+                |> Vector2.scale (model.submarineState.throttle * enginePower)
+
+        -- |> (\v -> { v | y = -v.y })
     in
     { model
-        | submarineParticle =
-            model.submarineParticle
-                |> Particle.forwards
-                |> Vector2.scale (model.submarineState.throttle * enginePower)
-                |> (\force -> Particle.applyForce force model.submarineParticle)
+        | submarineParticle = Particle.applyForce force model.submarineParticle
     }
 
 
@@ -169,10 +171,10 @@ update msg model =
                     { model | submarineState = setThrottleInput 1 model.submarineState }
 
                 "ArrowLeft" ->
-                    { model | submarineState = setRudderInput -1 model.submarineState }
+                    { model | submarineState = setRudderInput 1 model.submarineState }
 
                 "ArrowRight" ->
-                    { model | submarineState = setRudderInput 1 model.submarineState }
+                    { model | submarineState = setRudderInput -1 model.submarineState }
 
                 _ ->
                     model
@@ -213,18 +215,24 @@ prettyFloat f =
             "Error"
 
 
+particleTransform : Particle -> Svg.Attribute msg
+particleTransform particle =
+    Svg.Attributes.transform
+        ("translate("
+            ++ String.fromInt (round particle.position.x)
+            ++ ", "
+            -- convert from cartesian coordinates to svg coordinates
+            ++ String.fromInt (round -particle.position.y)
+            ++ ") rotate("
+            ++ String.fromFloat (Vector2.angleDegrees particle.orientation)
+            ++ ")"
+        )
+
+
 viewSubmarine : ( Particle, Submarine ) -> Svg msg
 viewSubmarine ( particle, submarine ) =
     Svg.g
-        [ Svg.Attributes.transform
-            ("translate("
-                ++ String.fromInt (round particle.position.x)
-                ++ ", "
-                ++ String.fromInt (round particle.position.y)
-                ++ ") rotate("
-                ++ String.fromFloat (particle.rotation * 180 / pi)
-                ++ ")"
-            )
+        [ particleTransform particle
         ]
         [ Svg.line
             [ Svg.Attributes.x1 "-20"
@@ -233,7 +241,7 @@ viewSubmarine ( particle, submarine ) =
             , Svg.Attributes.y2 "0"
             , Svg.Attributes.stroke "black"
             , Svg.Attributes.strokeWidth "3"
-            , Svg.Attributes.transform ("rotate(" ++ String.fromFloat (submarine.rudder * -30) ++ ")")
+            , Svg.Attributes.transform ("rotate(" ++ String.fromFloat (submarine.rudder * 30) ++ ")")
             ]
             []
         , Svg.circle
@@ -326,11 +334,17 @@ view model =
                 ]
             , Html.p []
                 [ Html.text "Rotation (deg): "
-                , Html.text (prettyFloat (model.submarineParticle.rotation * 180 / pi))
+                , Html.text (prettyFloat (Vector2.angleDegrees model.submarineParticle.orientation))
                 ]
             , Html.p []
                 [ Html.text "Rotation (rad): "
-                , Html.text (prettyFloat model.submarineParticle.rotation)
+                , Html.text (prettyFloat (Vector2.angleRadian model.submarineParticle.orientation))
+                ]
+            , Html.p []
+                [ Html.text "Orientation vector: "
+                , Html.text (prettyFloat model.submarineParticle.orientation.x)
+                , Html.text ", "
+                , Html.text (prettyFloat model.submarineParticle.orientation.y)
                 ]
             , Html.p []
                 [ Html.text "Velocity: "
@@ -347,7 +361,7 @@ view model =
             , Svg.svg
                 [ Svg.Attributes.viewBox "-50 -50 100 100"
                 ]
-                [ viewCompass model.submarineParticle.rotation ]
+                [ viewCompass (Vector2.angleRadian model.submarineParticle.orientation) ]
             ]
         , Html.section [ Html.Attributes.class "game-view" ]
             [ Svg.svg

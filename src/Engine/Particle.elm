@@ -1,9 +1,7 @@
 module Engine.Particle exposing
     ( Particle
     , applyForce
-    , applyGravity
     , applyRotationalForce
-    , forwards
     , new
     , radius
     , setMass
@@ -22,17 +20,13 @@ radius =
     15
 
 
-
--- add rotation and rotation velocity
-
-
 {-| A particle meant to be used with Verlet integration
 -}
 type alias Particle =
     { position : Vector2
     , oldPosition : Vector2
     , acceleration : Vector2
-    , rotation : Float
+    , orientation : Vector2
     , rotationVelocity : Float
     , rotationAcceleration : Float
     , mass : Float
@@ -43,13 +37,18 @@ type alias Particle =
 -}
 new : Vector2 -> Float -> Particle
 new position mass =
-    Particle position position Vector2.zero 0 0 0 mass
+    Particle position position Vector2.zero Vector2.east 0 0 mass
 
 
 applyForce : Vector2 -> Particle -> Particle
 applyForce force particle =
     if particle.mass /= 0 then
-        { particle | acceleration = Vector2.add particle.acceleration (Vector2.divide particle.mass force) }
+        { particle
+            | acceleration =
+                force
+                    |> Vector2.divide particle.mass
+                    |> Vector2.add particle.acceleration
+        }
 
     else
         particle
@@ -64,13 +63,13 @@ applyRotationalForce force particle =
         particle
 
 
-applyGravity : Vector2 -> Particle -> Particle
-applyGravity force particle =
-    if particle.mass /= 0 then
-        { particle | acceleration = Vector2.add particle.acceleration force }
 
-    else
-        particle
+-- applyGravity : Vector2 -> Particle -> Particle
+-- applyGravity force particle =
+--     if particle.mass /= 0 then
+--         { particle | acceleration = Vector2.add particle.acceleration force }
+--     else
+--         particle
 
 
 {-| Derive velocity vector based on old position
@@ -80,11 +79,12 @@ velocity particle =
     Vector2.subtract particle.oldPosition particle.position
 
 
-forwards : Particle -> Vector2
-forwards particle =
-    Vector2.new (cos particle.rotation) (sin particle.rotation)
-        |> Vector2.add particle.position
-        |> Vector2.direction particle.position
+
+-- forwards : Particle -> Vector2
+-- forwards particle =
+--     Vector2.new (cos particle.rotation) (sin particle.rotation)
+--         |> Vector2.add particle.position
+--         |> Vector2.direction particle.position
 
 
 setPosition : Vector2 -> Particle -> Particle
@@ -97,16 +97,15 @@ setMass mass particle =
     { particle | mass = max 0 mass }
 
 
-clampRadian : Float -> Float
-clampRadian radian =
-    if radian > pi * 2 then
-        0 + (radian - pi * 2)
 
-    else if radian < 0 then
-        (pi * 2) - radian
-
-    else
-        radian
+-- clampRadian : Float -> Float
+-- clampRadian radian =
+--     if radian > pi * 2 then
+--         0 + (radian - pi * 2)
+--     else if radian < 0 then
+--         (pi * 2) - radian
+--     else
+--         radian
 
 
 {-| Step forwards using Verlet integration
@@ -120,13 +119,8 @@ step dt particle =
                 |> Vector2.add (Vector2.scale (dt ^ 2) particle.acceleration)
         , oldPosition = particle.position
         , acceleration = Vector2.zero
-        , rotationVelocity =
-            particle.rotationVelocity
-                + (particle.rotationAcceleration * (dt ^ 2))
-        , rotation =
-            particle.rotation
-                + particle.rotationVelocity
-                |> clampRadian
+        , rotationVelocity = particle.rotationVelocity + (particle.rotationAcceleration * (dt ^ 2))
+        , orientation = Vector2.rotate particle.rotationVelocity particle.orientation
         , rotationAcceleration = 0
     }
 
