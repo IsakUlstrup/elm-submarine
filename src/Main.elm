@@ -174,10 +174,10 @@ update msg model =
                     { model | submarineState = setThrottleInput 1 model.submarineState }
 
                 "ArrowLeft" ->
-                    { model | submarineState = setRudderInput 1 model.submarineState }
+                    { model | submarineState = setRudderInput -1 model.submarineState }
 
                 "ArrowRight" ->
-                    { model | submarineState = setRudderInput -1 model.submarineState }
+                    { model | submarineState = setRudderInput 1 model.submarineState }
 
                 _ ->
                     model
@@ -225,11 +225,29 @@ particleTransform particle =
             ++ String.fromInt (round particle.position.x)
             ++ ", "
             -- convert from cartesian coordinates to svg coordinates
-            ++ String.fromInt (round -particle.position.y)
+            ++ String.fromInt (round particle.position.y)
             ++ ") rotate("
-            ++ String.fromFloat (Vector2.angleDegrees particle.orientation)
+            -- ++ String.fromFloat (Vector2.angleDegrees particle.orientation)
+            ++ "0"
             ++ ")"
         )
+
+
+viewVector : List (Svg.Attribute msg) -> Vector2 -> Svg msg
+viewVector attrs vector =
+    let
+        ( x2, y2 ) =
+            ( vector.x * 50, vector.y * 50 )
+    in
+    Svg.line
+        ([ Svg.Attributes.x1 "0"
+         , Svg.Attributes.y1 "0"
+         , Svg.Attributes.x2 (String.fromFloat x2)
+         , Svg.Attributes.y2 (String.fromFloat y2)
+         ]
+            ++ attrs
+        )
+        []
 
 
 viewSubmarine : ( Particle, Submarine ) -> Svg msg
@@ -237,30 +255,42 @@ viewSubmarine ( particle, submarine ) =
     Svg.g
         [ particleTransform particle
         ]
-        [ Svg.line
-            [ Svg.Attributes.x1 "-20"
-            , Svg.Attributes.y1 "0"
-            , Svg.Attributes.x2 "-30"
-            , Svg.Attributes.y2 "0"
-            , Svg.Attributes.stroke "black"
-            , Svg.Attributes.strokeWidth "3"
-            , Svg.Attributes.transform ("rotate(" ++ String.fromFloat (submarine.rudder * 30) ++ ")")
-            ]
-            []
-        , Svg.circle
+        [ Svg.circle
             [ Svg.Attributes.r "20"
             , Svg.Attributes.fill "white"
             ]
             []
-        , Svg.line
-            [ Svg.Attributes.x1 "15"
-            , Svg.Attributes.y1 "0"
-            , Svg.Attributes.x2 "25"
-            , Svg.Attributes.y2 "0"
-            , Svg.Attributes.stroke "black"
-            , Svg.Attributes.strokeWidth "3"
+        , Svg.g [ Svg.Attributes.transform "translate(0, -50)", Svg.Attributes.fontSize "0.8rem" ]
+            [ Svg.text_
+                [ Svg.Attributes.fill "red"
+                , Svg.Attributes.transform "translate(0, -30)"
+                ]
+                [ Svg.text "orientation" ]
+            , Svg.text_
+                [ Svg.Attributes.fill "green"
+                , Svg.Attributes.transform "translate(0, -20)"
+                ]
+                [ Svg.text "rudder" ]
+            , Svg.text_
+                [ Svg.Attributes.fill "orange"
+                , Svg.Attributes.transform "translate(0, -10)"
+                ]
+                [ Svg.text "velocity" ]
             ]
-            []
+        , Svg.g
+            [ Svg.Attributes.strokeWidth "3"
+            , Svg.Attributes.strokeLinecap "round"
+            ]
+            [ viewVector
+                [ Svg.Attributes.stroke "red" ]
+                particle.orientation
+            , viewVector
+                [ Svg.Attributes.stroke "green" ]
+                (particle.orientation |> Vector2.rotate submarine.rudder)
+            , viewVector
+                [ Svg.Attributes.stroke "orange" ]
+                (particle |> Particle.velocity)
+            ]
         ]
 
 
