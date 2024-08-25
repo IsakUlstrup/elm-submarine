@@ -242,19 +242,20 @@ prettyFloat f =
             "Error"
 
 
-particleTransform : Particle -> Svg.Attribute msg
-particleTransform particle =
-    Svg.Attributes.transform
-        ("translate("
-            ++ String.fromInt (round particle.position.x)
-            ++ ", "
-            -- convert from cartesian coordinates to svg coordinates
-            ++ String.fromInt (round particle.position.y)
-            ++ ") rotate("
-            -- ++ String.fromFloat (Vector2.angleDegrees particle.orientation)
-            ++ "0"
-            ++ ")"
-        )
+
+-- particleTransform : Particle -> Svg.Attribute msg
+-- particleTransform particle =
+--     Svg.Attributes.transform
+--         ("translate("
+--             ++ String.fromInt (round particle.position.x)
+--             ++ ", "
+--             -- convert from cartesian coordinates to svg coordinates
+--             ++ String.fromInt (round particle.position.y)
+--             ++ ") rotate("
+--             -- ++ String.fromFloat (Vector2.angleDegrees particle.orientation)
+--             ++ "0"
+--             ++ ")"
+--         )
 
 
 viewVector : List (Svg.Attribute msg) -> Vector2 -> Svg msg
@@ -328,9 +329,9 @@ viewGrid pos =
     let
         verticalLine x =
             Svg.line
-                [ Svg.Attributes.x1 (String.fromFloat (x * 100))
+                [ Svg.Attributes.x1 (String.fromInt x)
                 , Svg.Attributes.y1 "-500"
-                , Svg.Attributes.x2 (String.fromFloat (x * 100))
+                , Svg.Attributes.x2 (String.fromInt x)
                 , Svg.Attributes.y2 "500"
                 ]
                 []
@@ -338,23 +339,29 @@ viewGrid pos =
         horizontalLine y =
             Svg.line
                 [ Svg.Attributes.x1 "-500"
-                , Svg.Attributes.y1 (String.fromFloat (y * 100))
+                , Svg.Attributes.y1 (String.fromInt y)
                 , Svg.Attributes.x2 "500"
-                , Svg.Attributes.y2 (String.fromFloat (y * 100))
+                , Svg.Attributes.y2 (String.fromInt y)
                 ]
                 []
 
         verticalLines =
-            List.range -4 4
-                |> List.map
-                    (toFloat >> verticalLine)
-                |> Svg.g []
+            let
+                adjustedPos =
+                    pos.x / 100 |> round
+            in
+            List.range -5 5
+                |> List.map (\x -> verticalLine (adjustedPos * 100 + (100 * x)))
+                |> Svg.g [ Svg.Attributes.transform ("translate(0, " ++ String.fromFloat pos.y ++ ")") ]
 
         horizontalLines =
-            List.range -4 4
-                |> List.map
-                    (toFloat >> horizontalLine)
-                |> Svg.g []
+            let
+                adjustedPos =
+                    pos.y / 100 |> round
+            in
+            List.range -5 5
+                |> List.map (\y -> horizontalLine (adjustedPos * 100 + (100 * y)))
+                |> Svg.g [ Svg.Attributes.transform ("translate(" ++ String.fromFloat pos.x ++ ",0)") ]
     in
     Svg.g
         [ Svg.Attributes.stroke "white"
