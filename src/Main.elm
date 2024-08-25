@@ -286,28 +286,6 @@ viewSubmarine ( particle, submarine ) =
             ]
             []
         , Svg.g
-            [ Svg.Attributes.transform "translate(0, -50)"
-            , Svg.Attributes.fontSize "0.8rem"
-            , Svg.Attributes.stroke "white"
-            , Svg.Attributes.strokeWidth "0.3"
-            ]
-            [ Svg.text_
-                [ Svg.Attributes.fill "red"
-                , Svg.Attributes.transform "translate(0, -30)"
-                ]
-                [ Svg.text "orientation" ]
-            , Svg.text_
-                [ Svg.Attributes.fill "green"
-                , Svg.Attributes.transform "translate(0, -20)"
-                ]
-                [ Svg.text "orthogonal orientation" ]
-            , Svg.text_
-                [ Svg.Attributes.fill "orange"
-                , Svg.Attributes.transform "translate(0, -10)"
-                ]
-                [ Svg.text "velocity" ]
-            ]
-        , Svg.g
             [ Svg.Attributes.strokeWidth "3"
             , Svg.Attributes.strokeLinecap "round"
             ]
