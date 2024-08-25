@@ -277,7 +277,7 @@ viewVector attrs vector =
 viewSubmarine : ( Particle, Submarine ) -> Svg msg
 viewSubmarine ( particle, submarine ) =
     Svg.g
-        [ particleTransform particle
+        [--particleTransform particle
         ]
         [ Svg.circle
             [ Svg.Attributes.r "20"
@@ -320,6 +320,54 @@ viewSubmarine ( particle, submarine ) =
                 [ Svg.Attributes.stroke "orange" ]
                 (particle |> Particle.velocity)
             ]
+        ]
+
+
+viewGrid : Vector2 -> Svg msg
+viewGrid pos =
+    let
+        verticalLine x =
+            Svg.line
+                [ Svg.Attributes.x1 (String.fromFloat (x * 100))
+                , Svg.Attributes.y1 "-500"
+                , Svg.Attributes.x2 (String.fromFloat (x * 100))
+                , Svg.Attributes.y2 "500"
+                ]
+                []
+
+        horizontalLine y =
+            Svg.line
+                [ Svg.Attributes.x1 "-500"
+                , Svg.Attributes.y1 (String.fromFloat (y * 100))
+                , Svg.Attributes.x2 "500"
+                , Svg.Attributes.y2 (String.fromFloat (y * 100))
+                ]
+                []
+
+        verticalLines =
+            List.range -4 4
+                |> List.map
+                    (toFloat >> verticalLine)
+                |> Svg.g []
+
+        horizontalLines =
+            List.range -4 4
+                |> List.map
+                    (toFloat >> horizontalLine)
+                |> Svg.g []
+    in
+    Svg.g
+        [ Svg.Attributes.stroke "white"
+        , Svg.Attributes.transform
+            ("translate("
+                ++ String.fromFloat -pos.x
+                ++ ", "
+                ++ String.fromFloat -pos.y
+                ++ ")"
+            )
+        ]
+        [ verticalLines
+        , horizontalLines
         ]
 
 
@@ -428,9 +476,13 @@ view model =
         , Html.section [ Html.Attributes.class "game-view" ]
             [ Svg.svg
                 [ Svg.Attributes.viewBox "-500 -500 1000 1000"
+                , Svg.Attributes.width "1000px"
+                , Svg.Attributes.height "1000px"
                 , Svg.Attributes.id "game-view"
                 ]
-                [ viewSubmarine ( model.submarineParticle, model.submarineState ) ]
+                [ viewGrid model.submarineParticle.position
+                , viewSubmarine ( model.submarineParticle, model.submarineState )
+                ]
             ]
         ]
 
