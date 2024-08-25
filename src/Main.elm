@@ -278,10 +278,9 @@ viewVector attrs vector =
 viewSubmarine : ( Particle, Submarine ) -> Svg msg
 viewSubmarine ( particle, submarine ) =
     Svg.g
-        [--particleTransform particle
-        ]
+        []
         [ Svg.circle
-            [ Svg.Attributes.r "20"
+            [ Svg.Attributes.r "50"
             , Svg.Attributes.fill "white"
             ]
             []
