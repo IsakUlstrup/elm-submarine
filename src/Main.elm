@@ -285,7 +285,7 @@ viewSubmarine ( particle, submarine ) =
             ]
             []
         , Svg.g
-            [ Svg.Attributes.strokeWidth "3"
+            [ Svg.Attributes.strokeWidth "10"
             , Svg.Attributes.strokeLinecap "round"
             ]
             [ viewVector
