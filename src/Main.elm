@@ -325,19 +325,19 @@ viewGrid pos =
         verticalLines =
             let
                 adjustedPos =
-                    pos.x / 100 |> round
+                    pos.x / 200 |> round
             in
-            List.range -5 5
-                |> List.map (\x -> verticalLine (adjustedPos * 100 + (100 * x)))
+            List.range -2 2
+                |> List.map (\x -> verticalLine (adjustedPos * 200 + (200 * x)))
                 |> Svg.g [ Svg.Attributes.transform ("translate(0, " ++ String.fromFloat pos.y ++ ")") ]
 
         horizontalLines =
             let
                 adjustedPos =
-                    pos.y / 100 |> round
+                    pos.y / 200 |> round
             in
-            List.range -5 5
-                |> List.map (\y -> horizontalLine (adjustedPos * 100 + (100 * y)))
+            List.range -2 2
+                |> List.map (\y -> horizontalLine (adjustedPos * 200 + (200 * y)))
                 |> Svg.g [ Svg.Attributes.transform ("translate(" ++ String.fromFloat pos.x ++ ",0)") ]
     in
     Svg.g
