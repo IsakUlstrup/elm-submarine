@@ -10,6 +10,7 @@ import Html.Events
 import Json.Decode as Decode exposing (Decoder)
 import Svg exposing (Svg)
 import Svg.Attributes
+import Svg.Lazy
 
 
 
@@ -269,7 +270,7 @@ viewSubmarine ( particle, submarine ) =
             ]
             []
         , Svg.g
-            [ Svg.Attributes.strokeWidth "10"
+            [ Svg.Attributes.strokeWidth "7"
             , Svg.Attributes.strokeLinecap "round"
             ]
             [ viewVector
@@ -368,6 +369,16 @@ viewCompass bearing =
         ]
 
 
+viewMovementDebug : Submarine -> Particle -> Html msg
+viewMovementDebug submarine particle =
+    Svg.svg
+        [ Svg.Attributes.viewBox "-250 -250 500 500"
+        ]
+        [ viewGrid particle.position
+        , viewSubmarine ( particle, submarine )
+        ]
+
+
 view : Model -> Html Msg
 view model =
     main_ [ Html.Attributes.id "app" ]
@@ -427,17 +438,14 @@ view model =
                 , Html.text (model.submarineState.rudder |> prettyFloat)
                 ]
             ]
-        , Svg.svg
-            [ Svg.Attributes.viewBox "-50 -50 100 100"
-            , Svg.Attributes.class "module"
+        , Html.div [ Svg.Attributes.class "module" ]
+            [ Svg.svg
+                [ Svg.Attributes.viewBox "-50 -50 100 100"
+                ]
+                [ Svg.Lazy.lazy viewCompass model.submarineParticle.orientation ]
             ]
-            [ viewCompass model.submarineParticle.orientation ]
-        , Svg.svg
-            [ Svg.Attributes.viewBox "-250 -250 500 500"
-            , Svg.Attributes.class "module"
-            ]
-            [ viewGrid model.submarineParticle.position
-            , viewSubmarine ( model.submarineParticle, model.submarineState )
+        , Html.div [ Svg.Attributes.class "module", Svg.Attributes.class "fill" ]
+            [ Svg.Lazy.lazy2 viewMovementDebug model.submarineState model.submarineParticle
             ]
         ]
 
