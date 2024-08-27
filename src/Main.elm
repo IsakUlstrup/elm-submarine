@@ -194,13 +194,13 @@ update msg model =
 
         KeyDown key ->
             ( case key of
-                "ArrowUp" ->
+                "w" ->
                     { model | submarineState = setThrottleInput 1 model.submarineState }
 
-                "ArrowLeft" ->
+                "a" ->
                     { model | submarineState = setRudderInput -1 model.submarineState }
 
-                "ArrowRight" ->
+                "d" ->
                     { model | submarineState = setRudderInput 1 model.submarineState }
 
                 _ ->
@@ -210,13 +210,13 @@ update msg model =
 
         KeyUp key ->
             ( case key of
-                "ArrowUp" ->
+                "w" ->
                     { model | submarineState = setThrottleInput 0 model.submarineState }
 
-                "ArrowLeft" ->
+                "a" ->
                     { model | submarineState = setRudderInput 0 model.submarineState }
 
-                "ArrowRight" ->
+                "d" ->
                     { model | submarineState = setRudderInput 0 model.submarineState }
 
                 _ ->
@@ -240,22 +240,6 @@ prettyFloat f =
 
         [] ->
             "Error"
-
-
-
--- particleTransform : Particle -> Svg.Attribute msg
--- particleTransform particle =
---     Svg.Attributes.transform
---         ("translate("
---             ++ String.fromInt (round particle.position.x)
---             ++ ", "
---             -- convert from cartesian coordinates to svg coordinates
---             ++ String.fromInt (round particle.position.y)
---             ++ ") rotate("
---             -- ++ String.fromFloat (Vector2.angleDegrees particle.orientation)
---             ++ "0"
---             ++ ")"
---         )
 
 
 viewVector : List (Svg.Attribute msg) -> Vector2 -> Svg msg
@@ -307,52 +291,42 @@ viewGrid pos =
         verticalLine x =
             Svg.line
                 [ Svg.Attributes.x1 (String.fromInt x)
-                , Svg.Attributes.y1 "-500"
+                , Svg.Attributes.y1 "-1000"
                 , Svg.Attributes.x2 (String.fromInt x)
-                , Svg.Attributes.y2 "500"
+                , Svg.Attributes.y2 "1000"
                 ]
                 []
 
         horizontalLine y =
             Svg.line
-                [ Svg.Attributes.x1 "-500"
+                [ Svg.Attributes.x1 "-1000"
                 , Svg.Attributes.y1 (String.fromInt y)
-                , Svg.Attributes.x2 "500"
+                , Svg.Attributes.x2 "1000"
                 , Svg.Attributes.y2 (String.fromInt y)
                 ]
                 []
 
-        verticalLines =
-            let
-                adjustedPos =
-                    pos.x / 200 |> round
-            in
-            List.range -2 2
-                |> List.map (\x -> verticalLine (adjustedPos * 200 + (200 * x)))
-                |> Svg.g [ Svg.Attributes.transform ("translate(0, " ++ String.fromFloat pos.y ++ ")") ]
-
-        horizontalLines =
-            let
-                adjustedPos =
-                    pos.y / 200 |> round
-            in
-            List.range -2 2
-                |> List.map (\y -> horizontalLine (adjustedPos * 200 + (200 * y)))
-                |> Svg.g [ Svg.Attributes.transform ("translate(" ++ String.fromFloat pos.x ++ ",0)") ]
+        spacing =
+            250
     in
     Svg.g
         [ Svg.Attributes.stroke "white"
         , Svg.Attributes.transform
             ("translate("
-                ++ String.fromFloat -pos.x
+                ++ String.fromInt -(modBy spacing (round pos.x))
                 ++ ", "
-                ++ String.fromFloat -pos.y
+                ++ String.fromInt -(modBy spacing (round pos.y))
                 ++ ")"
             )
         ]
-        [ verticalLines
-        , horizontalLines
-        ]
+        (List.range -2 2
+            |> List.concatMap
+                (\i ->
+                    [ verticalLine (i * spacing)
+                    , horizontalLine (i * spacing)
+                    ]
+                )
+        )
 
 
 viewCompass : Vector2 -> Svg msg
@@ -397,7 +371,7 @@ viewCompass bearing =
 view : Model -> Html Msg
 view model =
     main_ [ Html.Attributes.id "app" ]
-        [ Html.section [ Html.Attributes.class "sidebar" ]
+        [ Html.div [ Html.Attributes.class "module" ]
             [ Html.label [ Html.Attributes.for "rudder-input" ] [ Html.text ("Rudder input: " ++ prettyFloat model.submarineState.rudderInput) ]
             , Html.input
                 [ Html.Attributes.id "rudder-input"
@@ -409,7 +383,9 @@ view model =
                 , Html.Events.onInput (String.toFloat >> Maybe.withDefault model.submarineState.rudderInput >> RudderInput)
                 ]
                 []
-            , Html.label [ Html.Attributes.for "throttle-input" ] [ Html.text ("Throttle input: " ++ String.fromFloat model.submarineState.throttleInput) ]
+            ]
+        , Html.div [ Html.Attributes.class "module" ]
+            [ Html.label [ Html.Attributes.for "throttle-input" ] [ Html.text ("Throttle input: " ++ String.fromFloat model.submarineState.throttleInput) ]
             , Html.input
                 [ Html.Attributes.id "throttle-input"
                 , Html.Attributes.value (String.fromFloat model.submarineState.throttleInput)
@@ -420,53 +396,50 @@ view model =
                 , Html.Events.onInput (String.toFloat >> Maybe.withDefault model.submarineState.throttleInput >> ThrottleInput)
                 ]
                 []
-            , Html.p []
-                [ Html.text "Position: "
-                , Html.text (prettyFloat model.submarineParticle.position.x)
-                , Html.text ", "
-                , Html.text (prettyFloat model.submarineParticle.position.y)
-                ]
-            , Html.p []
-                [ Html.text "Rotation (deg): "
-                , Html.text (prettyFloat (Vector2.angleDegrees model.submarineParticle.orientation))
-                ]
-            , Html.p []
-                [ Html.text "Rotation (rad): "
-                , Html.text (prettyFloat (Vector2.angleRadian model.submarineParticle.orientation))
-                ]
-            , Html.p []
-                [ Html.text "Orientation vector: "
-                , Html.text (prettyFloat model.submarineParticle.orientation.x)
-                , Html.text ", "
-                , Html.text (prettyFloat model.submarineParticle.orientation.y)
-                ]
-            , Html.p []
-                [ Html.text "Velocity: "
-                , Html.text (model.submarineParticle |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
-                ]
-            , Html.p []
-                [ Html.text "Throttle: "
-                , Html.text (model.submarineState.throttle |> prettyFloat)
-                ]
-            , Html.p []
-                [ Html.text "Rudder: "
-                , Html.text (model.submarineState.rudder |> prettyFloat)
-                ]
-            , Svg.svg
-                [ Svg.Attributes.viewBox "-50 -50 100 100"
-                ]
-                [ viewCompass model.submarineParticle.orientation ]
             ]
-        , Html.section [ Html.Attributes.class "game-view" ]
-            [ Svg.svg
-                [ Svg.Attributes.viewBox "-500 -500 1000 1000"
-                , Svg.Attributes.width "1000px"
-                , Svg.Attributes.height "1000px"
-                , Svg.Attributes.id "game-view"
-                ]
-                [ viewGrid model.submarineParticle.position
-                , viewSubmarine ( model.submarineParticle, model.submarineState )
-                ]
+        , Html.p [ Html.Attributes.class "module" ]
+            [ Html.text "Position: "
+            , Html.text (prettyFloat model.submarineParticle.position.x)
+            , Html.text ", "
+            , Html.text (prettyFloat model.submarineParticle.position.y)
+            ]
+        , Html.p [ Html.Attributes.class "module" ]
+            [ Html.text "Rotation (deg): "
+            , Html.text (prettyFloat (Vector2.angleDegrees model.submarineParticle.orientation))
+            ]
+        , Html.p [ Html.Attributes.class "module" ]
+            [ Html.text "Rotation (rad): "
+            , Html.text (prettyFloat (Vector2.angleRadian model.submarineParticle.orientation))
+            ]
+        , Html.p [ Html.Attributes.class "module" ]
+            [ Html.text "Orientation vector: "
+            , Html.text (prettyFloat model.submarineParticle.orientation.x)
+            , Html.text ", "
+            , Html.text (prettyFloat model.submarineParticle.orientation.y)
+            ]
+        , Html.p [ Html.Attributes.class "module" ]
+            [ Html.text "Velocity: "
+            , Html.text (model.submarineParticle |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
+            ]
+        , Html.p [ Html.Attributes.class "module" ]
+            [ Html.text "Throttle: "
+            , Html.text (model.submarineState.throttle |> prettyFloat)
+            ]
+        , Html.p [ Html.Attributes.class "module" ]
+            [ Html.text "Rudder: "
+            , Html.text (model.submarineState.rudder |> prettyFloat)
+            ]
+        , Svg.svg
+            [ Svg.Attributes.viewBox "-50 -50 100 100"
+            , Svg.Attributes.class "module"
+            ]
+            [ viewCompass model.submarineParticle.orientation ]
+        , Svg.svg
+            [ Svg.Attributes.viewBox "-500 -500 1000 1000"
+            , Svg.Attributes.class "module"
+            ]
+            [ viewGrid model.submarineParticle.position
+            , viewSubmarine ( model.submarineParticle, model.submarineState )
             ]
         ]
 
