@@ -3,7 +3,6 @@ module Engine.Particle exposing
     , applyForce
     , applyRotationalForce
     , new
-    , radius
     , setMass
     , setPosition
     , step
@@ -11,13 +10,6 @@ module Engine.Particle exposing
     )
 
 import Engine.Vector2 as Vector2 exposing (Vector2)
-
-
-{-| Particle radius constant
--}
-radius : Float
-radius =
-    15
 
 
 {-| A particle meant to be used with Verlet integration
@@ -30,6 +22,7 @@ type alias Particle =
     , rotationVelocity : Float
     , rotationAcceleration : Float
     , mass : Float
+    , radius : Float
     }
 
 
@@ -37,7 +30,7 @@ type alias Particle =
 -}
 new : Vector2 -> Float -> Particle
 new position mass =
-    Particle position position Vector2.zero Vector2.east 0 0 mass
+    Particle position position Vector2.zero Vector2.east 0 0 mass 15
 
 
 applyForce : Vector2 -> Particle -> Particle
