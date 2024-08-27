@@ -411,6 +411,24 @@ view model =
                 ]
             ]
         , Html.div [ Html.Attributes.class "module" ]
+            [ Html.h1 [] [ Html.text "Rudder" ]
+            , Html.div
+                [ Html.Attributes.style "display" "flex"
+                , Html.Attributes.style "width" "100%"
+                , Html.Attributes.style "gap" "0.5rem"
+                ]
+                [ Html.meter
+                    [ Html.Attributes.value (String.fromFloat (model.submarineState.rudder |> min 0 |> abs))
+                    , Html.Attributes.style "transform" "rotate(180deg)"
+                    ]
+                    []
+                , Html.meter
+                    [ Html.Attributes.value (String.fromFloat model.submarineState.rudder)
+                    ]
+                    []
+                ]
+            ]
+        , Html.div [ Html.Attributes.class "module" ]
             [ Html.p []
                 [ Html.text "Position: "
                 , Html.text (prettyFloat model.submarineParticle.position.x)
