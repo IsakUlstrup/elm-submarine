@@ -291,23 +291,23 @@ viewGrid pos =
         verticalLine x =
             Svg.line
                 [ Svg.Attributes.x1 (String.fromInt x)
-                , Svg.Attributes.y1 "-1000"
+                , Svg.Attributes.y1 "-500"
                 , Svg.Attributes.x2 (String.fromInt x)
-                , Svg.Attributes.y2 "1000"
+                , Svg.Attributes.y2 "500"
                 ]
                 []
 
         horizontalLine y =
             Svg.line
-                [ Svg.Attributes.x1 "-1000"
+                [ Svg.Attributes.x1 "-500"
                 , Svg.Attributes.y1 (String.fromInt y)
-                , Svg.Attributes.x2 "1000"
+                , Svg.Attributes.x2 "500"
                 , Svg.Attributes.y2 (String.fromInt y)
                 ]
                 []
 
         spacing =
-            250
+            200
     in
     Svg.g
         [ Svg.Attributes.stroke "white"
@@ -372,62 +372,60 @@ view : Model -> Html Msg
 view model =
     main_ [ Html.Attributes.id "app" ]
         [ Html.div [ Html.Attributes.class "module" ]
-            [ Html.label [ Html.Attributes.for "rudder-input" ] [ Html.text ("Rudder input: " ++ prettyFloat model.submarineState.rudderInput) ]
-            , Html.input
-                [ Html.Attributes.id "rudder-input"
-                , Html.Attributes.value (String.fromFloat model.submarineState.rudderInput)
-                , Html.Attributes.type_ "range"
-                , Html.Attributes.min "-1"
-                , Html.Attributes.max "1"
-                , Html.Attributes.step "0.1"
-                , Html.Events.onInput (String.toFloat >> Maybe.withDefault model.submarineState.rudderInput >> RudderInput)
+            [ Html.div []
+                [ Html.label [ Html.Attributes.for "rudder-input" ] [ Html.text ("Rudder input: " ++ prettyFloat model.submarineState.rudderInput) ]
+                , Html.input
+                    [ Html.Attributes.id "rudder-input"
+                    , Html.Attributes.value (String.fromFloat model.submarineState.rudderInput)
+                    , Html.Attributes.type_ "range"
+                    , Html.Attributes.min "-1"
+                    , Html.Attributes.max "1"
+                    , Html.Attributes.step "0.1"
+                    , Html.Events.onInput (String.toFloat >> Maybe.withDefault model.submarineState.rudderInput >> RudderInput)
+                    ]
+                    []
                 ]
-                []
+            , Html.div []
+                [ Html.label [ Html.Attributes.for "throttle-input" ] [ Html.text ("Throttle input: " ++ String.fromFloat model.submarineState.throttleInput) ]
+                , Html.input
+                    [ Html.Attributes.id "throttle-input"
+                    , Html.Attributes.value (String.fromFloat model.submarineState.throttleInput)
+                    , Html.Attributes.type_ "range"
+                    , Html.Attributes.min "0"
+                    , Html.Attributes.max "1"
+                    , Html.Attributes.step "0.1"
+                    , Html.Events.onInput (String.toFloat >> Maybe.withDefault model.submarineState.throttleInput >> ThrottleInput)
+                    ]
+                    []
+                ]
             ]
         , Html.div [ Html.Attributes.class "module" ]
-            [ Html.label [ Html.Attributes.for "throttle-input" ] [ Html.text ("Throttle input: " ++ String.fromFloat model.submarineState.throttleInput) ]
-            , Html.input
-                [ Html.Attributes.id "throttle-input"
-                , Html.Attributes.value (String.fromFloat model.submarineState.throttleInput)
-                , Html.Attributes.type_ "range"
-                , Html.Attributes.min "0"
-                , Html.Attributes.max "1"
-                , Html.Attributes.step "0.1"
-                , Html.Events.onInput (String.toFloat >> Maybe.withDefault model.submarineState.throttleInput >> ThrottleInput)
+            [ Html.p []
+                [ Html.text "Position: "
+                , Html.text (prettyFloat model.submarineParticle.position.x)
+                , Html.text ", "
+                , Html.text (prettyFloat model.submarineParticle.position.y)
                 ]
-                []
-            ]
-        , Html.p [ Html.Attributes.class "module" ]
-            [ Html.text "Position: "
-            , Html.text (prettyFloat model.submarineParticle.position.x)
-            , Html.text ", "
-            , Html.text (prettyFloat model.submarineParticle.position.y)
-            ]
-        , Html.p [ Html.Attributes.class "module" ]
-            [ Html.text "Rotation (deg): "
-            , Html.text (prettyFloat (Vector2.angleDegrees model.submarineParticle.orientation))
-            ]
-        , Html.p [ Html.Attributes.class "module" ]
-            [ Html.text "Rotation (rad): "
-            , Html.text (prettyFloat (Vector2.angleRadian model.submarineParticle.orientation))
-            ]
-        , Html.p [ Html.Attributes.class "module" ]
-            [ Html.text "Orientation vector: "
-            , Html.text (prettyFloat model.submarineParticle.orientation.x)
-            , Html.text ", "
-            , Html.text (prettyFloat model.submarineParticle.orientation.y)
-            ]
-        , Html.p [ Html.Attributes.class "module" ]
-            [ Html.text "Velocity: "
-            , Html.text (model.submarineParticle |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
-            ]
-        , Html.p [ Html.Attributes.class "module" ]
-            [ Html.text "Throttle: "
-            , Html.text (model.submarineState.throttle |> prettyFloat)
-            ]
-        , Html.p [ Html.Attributes.class "module" ]
-            [ Html.text "Rudder: "
-            , Html.text (model.submarineState.rudder |> prettyFloat)
+            , Html.p []
+                [ Html.text "Rotation (deg): "
+                , Html.text (prettyFloat (Vector2.angleDegrees model.submarineParticle.orientation))
+                ]
+            , Html.p []
+                [ Html.text "Rotation (rad): "
+                , Html.text (prettyFloat (Vector2.angleRadian model.submarineParticle.orientation))
+                ]
+            , Html.p []
+                [ Html.text "Velocity: "
+                , Html.text (model.submarineParticle |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
+                ]
+            , Html.p []
+                [ Html.text "Throttle: "
+                , Html.text (model.submarineState.throttle |> prettyFloat)
+                ]
+            , Html.p []
+                [ Html.text "Rudder: "
+                , Html.text (model.submarineState.rudder |> prettyFloat)
+                ]
             ]
         , Svg.svg
             [ Svg.Attributes.viewBox "-50 -50 100 100"
@@ -435,7 +433,7 @@ view model =
             ]
             [ viewCompass model.submarineParticle.orientation ]
         , Svg.svg
-            [ Svg.Attributes.viewBox "-500 -500 1000 1000"
+            [ Svg.Attributes.viewBox "-250 -250 500 500"
             , Svg.Attributes.class "module"
             ]
             [ viewGrid model.submarineParticle.position
