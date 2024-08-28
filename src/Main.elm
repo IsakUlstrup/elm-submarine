@@ -265,7 +265,7 @@ viewSubmarine ( particle, submarine ) =
     Svg.g
         []
         [ Svg.circle
-            [ Svg.Attributes.r "50"
+            [ Svg.Attributes.r (String.fromFloat particle.radius)
             , Svg.Attributes.fill "white"
             ]
             []

@@ -30,7 +30,7 @@ type alias Particle =
 -}
 new : Vector2 -> Float -> Particle
 new position mass =
-    Particle position position Vector2.zero Vector2.east 0 0 mass 15
+    Particle position position Vector2.zero Vector2.east 0 0 mass 50
 
 
 applyForce : Vector2 -> Particle -> Particle
