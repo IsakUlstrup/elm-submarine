@@ -34,14 +34,14 @@ tickControls dt submarine =
                 diff =
                     submarine.throttleInput - submarine.throttle
             in
-            submarine.throttle + (diff * dt * 0.003) |> clamp -1 1
+            submarine.throttle + (diff * dt * 0.002) |> clamp -1 1
         , rudder =
             let
                 diff : Float
                 diff =
                     submarine.rudderInput - submarine.rudder
             in
-            submarine.rudder + (diff * dt * 0.003) |> clamp -1 1
+            submarine.rudder + (diff * dt * 0.0015) |> clamp -1 1
     }
 
 
