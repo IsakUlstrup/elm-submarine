@@ -430,9 +430,7 @@ view model =
                     ]
                     []
                 ]
-            ]
-        , Html.div [ Html.Attributes.class "module" ]
-            [ Html.h1 [] [ Html.text "Throttle" ]
+            , Html.h1 [] [ Html.text "Throttle" ]
             , Html.meter
                 [ Html.Attributes.value (String.fromFloat model.submarineState.throttle)
                 ]
