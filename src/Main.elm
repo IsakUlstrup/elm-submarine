@@ -282,6 +282,9 @@ viewSubmarine ( particle, submarine ) =
             , viewVector
                 [ Svg.Attributes.stroke "orange" ]
                 (particle |> Particle.velocity)
+            , viewVector
+                [ Svg.Attributes.stroke "cyan" ]
+                (particle.orientation |> Vector2.scale -1 |> Vector2.rotate -submarine.rudder)
             ]
         ]
 
