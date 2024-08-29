@@ -526,21 +526,30 @@ viewModule particle submarine m =
             viewMovementModule particle submarine
 
 
-viewSlot : Particle -> Submarine -> Maybe Module -> Html Msg
-viewSlot particle submarine slot =
+viewSlot : Particle -> Submarine -> ( Int, Maybe Module ) -> Html Msg
+viewSlot particle submarine ( index, slot ) =
     Html.div [ Html.Attributes.class "slot" ]
         (case slot of
             Just m ->
                 [ viewModule particle submarine m ]
 
             Nothing ->
-                []
+                [ Html.button [ Html.Attributes.attribute "popovertarget" ("add-module-" ++ String.fromInt index) ] [ Html.text "Install module" ]
+                , Html.div
+                    [ Html.Attributes.attribute "popover" ""
+                    , Html.Attributes.id ("add-module-" ++ String.fromInt index)
+                    , Html.Attributes.class "add-module-popup"
+                    ]
+                    [ Html.h3 [] [ Html.text ("Slot #" ++ String.fromInt index) ]
+                    , Html.p [] [ Html.text "module list here" ]
+                    ]
+                ]
         )
 
 
 view : Model -> Html Msg
 view model =
-    main_ [ Html.Attributes.id "app" ] (model.slots |> Array.toList |> List.map (viewSlot model.submarineParticle model.submarineState))
+    main_ [ Html.Attributes.id "app" ] (model.slots |> Array.toIndexedList |> List.map (viewSlot model.submarineParticle model.submarineState))
 
 
 
