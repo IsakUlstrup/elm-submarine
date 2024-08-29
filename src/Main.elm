@@ -1,5 +1,6 @@
 module Main exposing (Model, Msg, Submarine, main)
 
+import Array exposing (Array)
 import Browser
 import Browser.Events
 import Engine.Particle as Particle exposing (Particle)
@@ -11,6 +12,18 @@ import Json.Decode as Decode exposing (Decoder)
 import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Lazy
+
+
+
+-- MODULE
+
+
+type Module
+    = InputButtons
+    | ControlsView
+    | StateView
+    | Compass
+    | MovementDebug
 
 
 
@@ -149,12 +162,24 @@ stepParticle dt model =
 type alias Model =
     { submarineParticle : Particle
     , submarineState : Submarine
+    , slots : Array (Maybe Module)
     }
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( Model (Particle.new Vector2.zero 100) (Submarine 0 0 0 0), Cmd.none )
+    ( Model
+        (Particle.new Vector2.zero 100)
+        (Submarine 0 0 0 0)
+        (Array.repeat 8 Nothing
+            |> Array.set 1 (Just Compass)
+            |> Array.set 3 (Just InputButtons)
+            |> Array.set 4 (Just MovementDebug)
+            |> Array.set 6 (Just ControlsView)
+            |> Array.set 7 (Just ControlsView)
+        )
+    , Cmd.none
+    )
 
 
 
@@ -382,90 +407,140 @@ viewMovementDebug submarine particle =
         ]
 
 
-view : Model -> Html Msg
-view model =
-    main_ [ Html.Attributes.id "app" ]
-        [ Html.div [ Html.Attributes.class "module", Html.Attributes.style "flex-direction" "row" ]
-            [ Html.button
-                [ Html.Events.on "pointerdown" (Decode.succeed (RudderInput -1))
-                , Html.Events.on "pointerup" (Decode.succeed (RudderInput 0))
-                , Html.Events.on "pointerleave" (Decode.succeed (RudderInput 0))
-                ]
-                [ Html.text "Port" ]
-            , Html.button
-                [ Html.Events.on "pointerdown" (Decode.succeed (ThrottleInput 1))
-                , Html.Events.on "pointerup" (Decode.succeed (ThrottleInput 0))
-                , Html.Events.on "pointerleave" (Decode.succeed (ThrottleInput 0))
-                ]
-                [ Html.text "Forwards" ]
-            , Html.button
-                [ Html.Events.on "pointerdown" (Decode.succeed (RudderInput 1))
-                , Html.Events.on "pointerup" (Decode.succeed (RudderInput 0))
-                , Html.Events.on "pointerleave" (Decode.succeed (RudderInput 0))
-                ]
-                [ Html.text "Starboard" ]
+viewInputButtons : Html Msg
+viewInputButtons =
+    Html.div [ Svg.Attributes.class "module" ]
+        [ Html.button
+            [ Html.Events.on "pointerdown" (Decode.succeed (RudderInput -1))
+            , Html.Events.on "pointerup" (Decode.succeed (RudderInput 0))
+            , Html.Events.on "pointerleave" (Decode.succeed (RudderInput 0))
             ]
-        , Html.div [ Html.Attributes.class "module" ]
-            [ Html.h1 [] [ Html.text "Rudder" ]
-            , Html.div
-                [ Html.Attributes.style "display" "flex"
-                , Html.Attributes.style "width" "100%"
-                , Html.Attributes.style "gap" "0.5rem"
+            [ Html.text "Port" ]
+        , Html.button
+            [ Html.Events.on "pointerdown" (Decode.succeed (ThrottleInput 1))
+            , Html.Events.on "pointerup" (Decode.succeed (ThrottleInput 0))
+            , Html.Events.on "pointerleave" (Decode.succeed (ThrottleInput 0))
+            ]
+            [ Html.text "Forwards" ]
+        , Html.button
+            [ Html.Events.on "pointerdown" (Decode.succeed (RudderInput 1))
+            , Html.Events.on "pointerup" (Decode.succeed (RudderInput 0))
+            , Html.Events.on "pointerleave" (Decode.succeed (RudderInput 0))
+            ]
+            [ Html.text "Starboard" ]
+        ]
+
+
+viewControls : Submarine -> Html Msg
+viewControls submarine =
+    Html.div [ Html.Attributes.class "module" ]
+        [ Html.h1 [] [ Html.text "Rudder" ]
+        , Html.div
+            [ Html.Attributes.style "display" "flex"
+            , Html.Attributes.style "width" "100%"
+            , Html.Attributes.style "gap" "0.5rem"
+            ]
+            [ Html.meter
+                [ Html.Attributes.value (String.fromFloat (submarine.rudder |> min 0 |> abs))
+                , Html.Attributes.style "transform" "rotate(180deg)"
                 ]
-                [ Html.meter
-                    [ Html.Attributes.value (String.fromFloat (model.submarineState.rudder |> min 0 |> abs))
-                    , Html.Attributes.style "transform" "rotate(180deg)"
-                    ]
-                    []
-                , Html.meter
-                    [ Html.Attributes.value (String.fromFloat model.submarineState.rudder)
-                    ]
-                    []
-                ]
-            , Html.h1 [] [ Html.text "Throttle" ]
+                []
             , Html.meter
-                [ Html.Attributes.value (String.fromFloat model.submarineState.throttle)
+                [ Html.Attributes.value (String.fromFloat submarine.rudder)
                 ]
                 []
             ]
-        , Html.div [ Html.Attributes.class "module" ]
-            [ Html.p []
-                [ Html.text "Position: "
-                , Html.text (prettyFloat model.submarineParticle.position.x)
-                , Html.text ", "
-                , Html.text (prettyFloat model.submarineParticle.position.y)
-                ]
-            , Html.p []
-                [ Html.text "Rotation (deg): "
-                , Html.text (prettyFloat (Vector2.angleDegrees model.submarineParticle.orientation))
-                ]
-            , Html.p []
-                [ Html.text "Rotation (rad): "
-                , Html.text (prettyFloat (Vector2.angleRadian model.submarineParticle.orientation))
-                ]
-            , Html.p []
-                [ Html.text "Velocity: "
-                , Html.text (model.submarineParticle |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
-                ]
-            , Html.p []
-                [ Html.text "Throttle: "
-                , Html.text (model.submarineState.throttle |> prettyFloat)
-                ]
-            , Html.p []
-                [ Html.text "Rudder: "
-                , Html.text (model.submarineState.rudder |> prettyFloat)
-                ]
+        , Html.h1 [] [ Html.text "Throttle" ]
+        , Html.meter
+            [ Html.Attributes.value (String.fromFloat submarine.throttle)
             ]
-        , Html.div [ Svg.Attributes.class "module" ]
-            [ Svg.svg
-                [ Svg.Attributes.viewBox "-50 -50 100 100"
-                ]
-                [ Svg.Lazy.lazy viewCompass model.submarineParticle.orientation ]
+            []
+        ]
+
+
+viewCompassModule : Particle -> Html Msg
+viewCompassModule particle =
+    Html.div [ Svg.Attributes.class "module" ]
+        [ Svg.svg
+            [ Svg.Attributes.viewBox "-50 -50 100 100"
             ]
-        , Html.div [ Svg.Attributes.class "module", Svg.Attributes.class "fill" ]
-            [ Svg.Lazy.lazy2 viewMovementDebug model.submarineState model.submarineParticle
+            [ Svg.Lazy.lazy viewCompass particle.orientation ]
+        ]
+
+
+viewStateModule : Particle -> Submarine -> Html msg
+viewStateModule particle submarine =
+    Html.div [ Html.Attributes.class "module" ]
+        [ Html.p []
+            [ Html.text "Position: "
+            , Html.text (prettyFloat particle.position.x)
+            , Html.text ", "
+            , Html.text (prettyFloat particle.position.y)
+            ]
+        , Html.p []
+            [ Html.text "Rotation (deg): "
+            , Html.text (prettyFloat (Vector2.angleDegrees particle.orientation))
+            ]
+        , Html.p []
+            [ Html.text "Rotation (rad): "
+            , Html.text (prettyFloat (Vector2.angleRadian particle.orientation))
+            ]
+        , Html.p []
+            [ Html.text "Velocity: "
+            , Html.text (particle |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
+            ]
+        , Html.p []
+            [ Html.text "Throttle: "
+            , Html.text (submarine.throttle |> prettyFloat)
+            ]
+        , Html.p []
+            [ Html.text "Rudder: "
+            , Html.text (submarine.rudder |> prettyFloat)
             ]
         ]
+
+
+viewMovementModule : Particle -> Submarine -> Html msg
+viewMovementModule particle submarine =
+    Html.div [ Svg.Attributes.class "module", Svg.Attributes.class "fill" ]
+        [ Svg.Lazy.lazy2 viewMovementDebug submarine particle
+        ]
+
+
+viewModule : Particle -> Submarine -> Module -> Html Msg
+viewModule particle submarine m =
+    case m of
+        InputButtons ->
+            viewInputButtons
+
+        ControlsView ->
+            viewControls submarine
+
+        StateView ->
+            viewStateModule particle submarine
+
+        Compass ->
+            viewCompassModule particle
+
+        MovementDebug ->
+            viewMovementModule particle submarine
+
+
+viewSlot : Particle -> Submarine -> Maybe Module -> Html Msg
+viewSlot particle submarine slot =
+    Html.div [ Html.Attributes.class "slot" ]
+        (case slot of
+            Just m ->
+                [ viewModule particle submarine m ]
+
+            Nothing ->
+                []
+        )
+
+
+view : Model -> Html Msg
+view model =
+    main_ [ Html.Attributes.id "app" ] (model.slots |> Array.toList |> List.map (viewSlot model.submarineParticle model.submarineState))
 
 
 

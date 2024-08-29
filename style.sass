@@ -35,18 +35,19 @@ body
     grid-auto-columns: minmax(15rem, 1fr)
     gap: 1rem
 
-@each $color in $rainbow
-    $length: length($rainbow)
-    $index: index($rainbow, $color)
-    .module:nth-child(#{$length}n+#{$index})
-        --color: $color
-        background: $color
-        &::before
-            background: lighten($color, 10)
+.slot
+    aspect-ratio: 1/1
+    box-shadow: 0rem 0rem 0.1rem rgba(0, 0, 0, 0.4) inset
+    border-radius: 1.2rem
+    padding: 0.2rem
+    background: rgba(0, 0, 0, 0.1)
 
 .module
     border-radius: 1rem
     border-bottom: 1px solid rgba(255, 255, 255, 0.4)
+    height: 100%
+    bottom: 0.5rem
+    background: rgb(230, 101, 163)
 
     padding: 1rem
     position: relative
@@ -64,6 +65,7 @@ body
         content: ""
         position: absolute
         border-radius: 1rem
+        background: rgb(248, 143, 194)
         left: 0
         right: 0
         top: 0
