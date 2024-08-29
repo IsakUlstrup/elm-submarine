@@ -385,33 +385,25 @@ viewMovementDebug submarine particle =
 view : Model -> Html Msg
 view model =
     main_ [ Html.Attributes.id "app" ]
-        [ Html.div [ Html.Attributes.class "module" ]
-            [ Html.div []
-                [ Html.label [ Html.Attributes.for "rudder-input" ] [ Html.text ("Rudder input: " ++ prettyFloat model.submarineState.rudderInput) ]
-                , Html.input
-                    [ Html.Attributes.id "rudder-input"
-                    , Html.Attributes.value (String.fromFloat model.submarineState.rudderInput)
-                    , Html.Attributes.type_ "range"
-                    , Html.Attributes.min "-1"
-                    , Html.Attributes.max "1"
-                    , Html.Attributes.step "0.1"
-                    , Html.Events.onInput (String.toFloat >> Maybe.withDefault model.submarineState.rudderInput >> RudderInput)
-                    ]
-                    []
+        [ Html.div [ Html.Attributes.class "module", Html.Attributes.style "flex-direction" "row" ]
+            [ Html.button
+                [ Html.Events.on "pointerdown" (Decode.succeed (RudderInput -1))
+                , Html.Events.on "pointerup" (Decode.succeed (RudderInput 0))
+                , Html.Events.on "pointerleave" (Decode.succeed (RudderInput 0))
                 ]
-            , Html.div []
-                [ Html.label [ Html.Attributes.for "throttle-input" ] [ Html.text ("Throttle input: " ++ String.fromFloat model.submarineState.throttleInput) ]
-                , Html.input
-                    [ Html.Attributes.id "throttle-input"
-                    , Html.Attributes.value (String.fromFloat model.submarineState.throttleInput)
-                    , Html.Attributes.type_ "range"
-                    , Html.Attributes.min "0"
-                    , Html.Attributes.max "1"
-                    , Html.Attributes.step "0.1"
-                    , Html.Events.onInput (String.toFloat >> Maybe.withDefault model.submarineState.throttleInput >> ThrottleInput)
-                    ]
-                    []
+                [ Html.text "Port" ]
+            , Html.button
+                [ Html.Events.on "pointerdown" (Decode.succeed (ThrottleInput 1))
+                , Html.Events.on "pointerup" (Decode.succeed (ThrottleInput 0))
+                , Html.Events.on "pointerleave" (Decode.succeed (ThrottleInput 0))
                 ]
+                [ Html.text "Forwards" ]
+            , Html.button
+                [ Html.Events.on "pointerdown" (Decode.succeed (RudderInput 1))
+                , Html.Events.on "pointerup" (Decode.succeed (RudderInput 0))
+                , Html.Events.on "pointerleave" (Decode.succeed (RudderInput 0))
+                ]
+                [ Html.text "Starboard" ]
             ]
         , Html.div [ Html.Attributes.class "module" ]
             [ Html.h1 [] [ Html.text "Rudder" ]
