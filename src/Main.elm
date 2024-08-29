@@ -9,6 +9,7 @@ import Html exposing (Html, main_)
 import Html.Attributes
 import Html.Events
 import Json.Decode as Decode exposing (Decoder)
+import SubmarineState exposing (SubmarineState)
 import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Lazy
@@ -26,46 +27,8 @@ type Module
     | MovementDebug
 
 
-
--- SUBMARINE
-
-
 type alias Submarine =
-    { throttle : Float
-    , rudder : Float
-    , rudderInput : Float
-    , throttleInput : Float
-    }
-
-
-tickControls : Float -> Submarine -> Submarine
-tickControls dt submarine =
-    { submarine
-        | throttle =
-            let
-                diff : Float
-                diff =
-                    submarine.throttleInput - submarine.throttle
-            in
-            submarine.throttle + (diff * dt * 0.002) |> clamp -1 1
-        , rudder =
-            let
-                diff : Float
-                diff =
-                    submarine.rudderInput - submarine.rudder
-            in
-            submarine.rudder + (diff * dt * 0.0015) |> clamp -1 1
-    }
-
-
-setThrottleInput : Float -> Submarine -> Submarine
-setThrottleInput throttle submarine =
-    { submarine | throttleInput = throttle |> clamp -1 1 }
-
-
-setRudderInput : Float -> Submarine -> Submarine
-setRudderInput r submarine =
-    { submarine | rudderInput = r |> clamp -1 1 }
+    SubmarineState
 
 
 
@@ -146,7 +109,7 @@ friction model =
 controlsUpdate : Float -> Model -> Model
 controlsUpdate dt model =
     { model
-        | submarineState = tickControls dt model.submarineState
+        | submarineState = SubmarineState.tickControls dt model.submarineState
     }
 
 
@@ -170,7 +133,7 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
         (Particle.new Vector2.zero 100)
-        (Submarine 0 0 0 0)
+        SubmarineState.new
         (Array.repeat 8 Nothing)
     , Cmd.none
     )
@@ -204,25 +167,25 @@ update msg model =
             )
 
         RudderInput r ->
-            ( { model | submarineState = setRudderInput r model.submarineState }
+            ( { model | submarineState = SubmarineState.setRudderInput r model.submarineState }
             , Cmd.none
             )
 
         ThrottleInput throttle ->
-            ( { model | submarineState = setThrottleInput throttle model.submarineState }
+            ( { model | submarineState = SubmarineState.setThrottleInput throttle model.submarineState }
             , Cmd.none
             )
 
         KeyDown key ->
             ( case key of
                 "w" ->
-                    { model | submarineState = setThrottleInput 1 model.submarineState }
+                    { model | submarineState = SubmarineState.setThrottleInput 1 model.submarineState }
 
                 "a" ->
-                    { model | submarineState = setRudderInput -1 model.submarineState }
+                    { model | submarineState = SubmarineState.setRudderInput -1 model.submarineState }
 
                 "d" ->
-                    { model | submarineState = setRudderInput 1 model.submarineState }
+                    { model | submarineState = SubmarineState.setRudderInput 1 model.submarineState }
 
                 _ ->
                     model
@@ -232,13 +195,13 @@ update msg model =
         KeyUp key ->
             ( case key of
                 "w" ->
-                    { model | submarineState = setThrottleInput 0 model.submarineState }
+                    { model | submarineState = SubmarineState.setThrottleInput 0 model.submarineState }
 
                 "a" ->
-                    { model | submarineState = setRudderInput 0 model.submarineState }
+                    { model | submarineState = SubmarineState.setRudderInput 0 model.submarineState }
 
                 "d" ->
-                    { model | submarineState = setRudderInput 0 model.submarineState }
+                    { model | submarineState = SubmarineState.setRudderInput 0 model.submarineState }
 
                 _ ->
                     model
