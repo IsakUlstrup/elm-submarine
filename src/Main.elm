@@ -171,13 +171,7 @@ init _ =
     ( Model
         (Particle.new Vector2.zero 100)
         (Submarine 0 0 0 0)
-        (Array.repeat 8 Nothing
-            |> Array.set 1 (Just Compass)
-            |> Array.set 3 (Just InputButtons)
-            |> Array.set 4 (Just MovementDebug)
-            |> Array.set 6 (Just ControlsView)
-            |> Array.set 7 (Just ControlsView)
-        )
+        (Array.repeat 8 Nothing)
     , Cmd.none
     )
 
@@ -192,6 +186,7 @@ type Msg
     | ThrottleInput Float
     | KeyDown String
     | KeyUp String
+    | ClickedAddModule Int Module
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -247,6 +242,11 @@ update msg model =
 
                 _ ->
                     model
+            , Cmd.none
+            )
+
+        ClickedAddModule index mod ->
+            ( { model | slots = Array.set index (Just mod) model.slots }
             , Cmd.none
             )
 
@@ -541,7 +541,13 @@ viewSlot particle submarine ( index, slot ) =
                     , Html.Attributes.class "add-module-popup"
                     ]
                     [ Html.h3 [] [ Html.text ("Slot #" ++ String.fromInt index) ]
-                    , Html.p [] [ Html.text "module list here" ]
+                    , Html.ul [ Html.Attributes.class "modules" ]
+                        [ Html.li [ Html.Events.onClick (ClickedAddModule index InputButtons) ] [ Html.text "Input buttons" ]
+                        , Html.li [ Html.Events.onClick (ClickedAddModule index ControlsView) ] [ Html.text "Controls state" ]
+                        , Html.li [ Html.Events.onClick (ClickedAddModule index StateView) ] [ Html.text "State view" ]
+                        , Html.li [ Html.Events.onClick (ClickedAddModule index Compass) ] [ Html.text "Compass" ]
+                        , Html.li [ Html.Events.onClick (ClickedAddModule index MovementDebug) ] [ Html.text "Movement" ]
+                        ]
                     ]
                 ]
         )
@@ -549,7 +555,11 @@ viewSlot particle submarine ( index, slot ) =
 
 view : Model -> Html Msg
 view model =
-    main_ [ Html.Attributes.id "app" ] (model.slots |> Array.toIndexedList |> List.map (viewSlot model.submarineParticle model.submarineState))
+    main_ [ Html.Attributes.id "app" ]
+        (model.slots
+            |> Array.toIndexedList
+            |> List.map (viewSlot model.submarineParticle model.submarineState)
+        )
 
 
 

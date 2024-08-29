@@ -53,6 +53,20 @@ body
     &::backdrop
         background: rgba(0, 0, 0, 0.3)
 
+    .modules
+        list-style: none
+        display: flex
+        flex-direction: column
+        gap: 0.5rem
+
+@keyframes fade-down
+    0%
+        transform: translateY(-5rem)
+        opacity: 0
+    100%
+        transform: translateY(0rem)
+        opacity: 1
+
 .module
     border-radius: 1rem
     border-bottom: 1px solid rgba(255, 255, 255, 0.4)
@@ -60,6 +74,8 @@ body
     height: 100%
     bottom: 0.5rem
     background: rgb(230, 101, 163)
+
+    animation: fade-down 300ms cubic-bezier(0.34, 1.56, 0.64, 1)
 
     padding: 1rem
     position: relative
