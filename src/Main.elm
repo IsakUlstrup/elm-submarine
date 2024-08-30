@@ -21,10 +21,10 @@ import Svg.Lazy
 
 type Module
     = InputButtons
-    | ControlsView
-    | StateView
+    | ControlsState
+    | StateDump
     | Compass
-    | MovementDebug
+    | Movement
 
 
 
@@ -231,45 +231,6 @@ viewGrid pos =
         )
 
 
-viewCompass : Vector2 -> Svg msg
-viewCompass bearing =
-    let
-        ( x2, y2 ) =
-            ( bearing.x * 35, bearing.y * 35 )
-    in
-    Svg.g []
-        [ Svg.circle [ Svg.Attributes.r "50", Svg.Attributes.fill "white" ] []
-        , Svg.g
-            [ Svg.Attributes.dominantBaseline "central"
-            , Svg.Attributes.textAnchor "middle"
-            , Svg.Attributes.fontSize "0.5rem"
-            ]
-            [ Svg.text_
-                [ Svg.Attributes.y "-40" ]
-                [ Svg.text "N" ]
-            , Svg.text_
-                [ Svg.Attributes.y "40" ]
-                [ Svg.text "S" ]
-            , Svg.text_
-                [ Svg.Attributes.x "-40" ]
-                [ Svg.text "W" ]
-            , Svg.text_
-                [ Svg.Attributes.x "40" ]
-                [ Svg.text "E" ]
-            ]
-        , Svg.line
-            [ Svg.Attributes.x1 "0"
-            , Svg.Attributes.y1 "0"
-            , Svg.Attributes.x2 (String.fromFloat x2)
-            , Svg.Attributes.y2 (String.fromFloat y2)
-            , Svg.Attributes.stroke "red"
-            , Svg.Attributes.strokeWidth "2"
-            , Svg.Attributes.strokeLinecap "round"
-            ]
-            []
-        ]
-
-
 viewMovementDebug : Submarine -> Html msg
 viewMovementDebug submarine =
     Svg.svg
@@ -304,8 +265,8 @@ viewInputButtons =
         ]
 
 
-viewControls : Submarine -> Html Msg
-viewControls submarine =
+viewControlsState : Submarine -> Html Msg
+viewControlsState submarine =
     Html.div [ Html.Attributes.class "module" ]
         [ Html.h1 [] [ Html.text "Rudder" ]
         , Html.div
@@ -331,18 +292,51 @@ viewControls submarine =
         ]
 
 
-viewCompassModule : Submarine -> Html Msg
-viewCompassModule submarine =
+viewCompass : Submarine -> Html Msg
+viewCompass submarine =
+    let
+        ( x2, y2 ) =
+            ( submarine.orientation.x * 35, submarine.orientation.y * 35 )
+    in
     Html.div [ Svg.Attributes.class "module" ]
         [ Svg.svg
             [ Svg.Attributes.viewBox "-50 -50 100 100"
             ]
-            [ Svg.Lazy.lazy viewCompass submarine.orientation ]
+            [ Svg.circle [ Svg.Attributes.r "50", Svg.Attributes.fill "white" ] []
+            , Svg.g
+                [ Svg.Attributes.dominantBaseline "central"
+                , Svg.Attributes.textAnchor "middle"
+                , Svg.Attributes.fontSize "0.5rem"
+                ]
+                [ Svg.text_
+                    [ Svg.Attributes.y "-40" ]
+                    [ Svg.text "N" ]
+                , Svg.text_
+                    [ Svg.Attributes.y "40" ]
+                    [ Svg.text "S" ]
+                , Svg.text_
+                    [ Svg.Attributes.x "-40" ]
+                    [ Svg.text "W" ]
+                , Svg.text_
+                    [ Svg.Attributes.x "40" ]
+                    [ Svg.text "E" ]
+                ]
+            , Svg.line
+                [ Svg.Attributes.x1 "0"
+                , Svg.Attributes.y1 "0"
+                , Svg.Attributes.x2 (String.fromFloat x2)
+                , Svg.Attributes.y2 (String.fromFloat y2)
+                , Svg.Attributes.stroke "red"
+                , Svg.Attributes.strokeWidth "2"
+                , Svg.Attributes.strokeLinecap "round"
+                ]
+                []
+            ]
         ]
 
 
-viewStateModule : Submarine -> Html msg
-viewStateModule submarine =
+viewStateDump : Submarine -> Html msg
+viewStateDump submarine =
     Html.div [ Html.Attributes.class "module" ]
         [ Html.p []
             [ Html.text "Position: "
@@ -373,8 +367,8 @@ viewStateModule submarine =
         ]
 
 
-viewMovementModule : Submarine -> Html msg
-viewMovementModule submarine =
+viewMovement : Submarine -> Html msg
+viewMovement submarine =
     Html.div [ Svg.Attributes.class "module", Svg.Attributes.class "fill" ]
         [ Svg.Lazy.lazy viewMovementDebug submarine
         ]
@@ -386,17 +380,17 @@ viewModule submarine m =
         InputButtons ->
             viewInputButtons
 
-        ControlsView ->
-            viewControls submarine
+        ControlsState ->
+            viewControlsState submarine
 
-        StateView ->
-            viewStateModule submarine
+        StateDump ->
+            viewStateDump submarine
 
         Compass ->
-            viewCompassModule submarine
+            viewCompass submarine
 
-        MovementDebug ->
-            viewMovementModule submarine
+        Movement ->
+            viewMovement submarine
 
 
 viewSlot : Submarine -> ( Int, Maybe Module ) -> Html Msg
@@ -416,10 +410,10 @@ viewSlot submarine ( index, slot ) =
                     [ Html.h3 [] [ Html.text ("Slot #" ++ String.fromInt index) ]
                     , Html.ul [ Html.Attributes.class "modules" ]
                         [ Html.li [ Html.Events.onClick (ClickedAddModule index InputButtons) ] [ Html.text "Input buttons" ]
-                        , Html.li [ Html.Events.onClick (ClickedAddModule index ControlsView) ] [ Html.text "Controls state" ]
-                        , Html.li [ Html.Events.onClick (ClickedAddModule index StateView) ] [ Html.text "State view" ]
+                        , Html.li [ Html.Events.onClick (ClickedAddModule index ControlsState) ] [ Html.text "Controls state" ]
+                        , Html.li [ Html.Events.onClick (ClickedAddModule index StateDump) ] [ Html.text "State view" ]
                         , Html.li [ Html.Events.onClick (ClickedAddModule index Compass) ] [ Html.text "Compass" ]
-                        , Html.li [ Html.Events.onClick (ClickedAddModule index MovementDebug) ] [ Html.text "Movement" ]
+                        , Html.li [ Html.Events.onClick (ClickedAddModule index Movement) ] [ Html.text "Movement" ]
                         ]
                     ]
                 ]
