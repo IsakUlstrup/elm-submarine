@@ -1,3 +1,9 @@
+// PALETTE
+$mint: hsl(126, 61%, 80%)
+$beige: hsl(50, 45%, 87%)
+$pink: hsl(330, 100%, 72%)
+$grey: hsl(217, 0%, 10%)
+
 *
     padding: 0
     margin: 0
@@ -7,9 +13,9 @@ input, meter
     width: 100%
 
 button
-    background-color: #6ad8af
+    background-color: $mint
     border: none
-    color: white
+    color: $grey
     padding: 1rem
     text-align: center
     text-decoration: none
@@ -20,11 +26,11 @@ button
     border-radius: 0.5rem
 
 body
-    background: beige
+    background: $beige
     -webkit-user-select: none
 
 #app
-    color: beige
+    color: $beige
     font-family: Arial, Helvetica, sans-serif
     padding: 1rem
     display: grid
@@ -70,7 +76,7 @@ body
     width: 100%
     height: 100%
     top: -0.75rem
-    background: rgb(230, 101, 163)
+    background: $pink
 
     animation: slide-down 300ms cubic-bezier(0.34, 1.56, 0.64, 1)
 
@@ -90,7 +96,7 @@ body
         content: ""
         position: absolute
         border-radius: 1rem
-        background: rgb(248, 143, 194)
+        background: lighten($pink, 10)
         left: 0
         right: 0
         top: 0
