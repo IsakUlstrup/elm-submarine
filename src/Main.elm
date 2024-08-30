@@ -1,15 +1,15 @@
-module Main exposing (Model, Msg, Submarine, main)
+module Main exposing (Model, Msg, main)
 
 import Array exposing (Array)
 import Browser
 import Browser.Events
-import Engine.Particle as Particle exposing (Particle)
+import Engine.Particle as Particle
 import Engine.Vector2 as Vector2 exposing (Vector2)
 import Html exposing (Html, main_)
 import Html.Attributes
 import Html.Events
 import Json.Decode as Decode exposing (Decoder)
-import SubmarineState exposing (SubmarineState)
+import Submarine exposing (Submarine)
 import Svg exposing (Svg)
 import Svg.Attributes
 import Svg.Lazy
@@ -27,97 +27,6 @@ type Module
     | MovementDebug
 
 
-type alias Submarine =
-    Particle SubmarineState
-
-
-
--- MODEL UPDATE HELPERS
-
-
-applyThrust : Model -> Model
-applyThrust model =
-    let
-        enginePower : Float
-        enginePower =
-            0.01
-
-        force : Vector2
-        force =
-            model.submarine.orientation
-                |> Vector2.scale (model.submarine.state.throttle * enginePower)
-    in
-    { model
-        | submarine = Particle.applyForce force model.submarine
-    }
-
-
-rudderForce : Model -> Model
-rudderForce model =
-    let
-        force =
-            Vector2.orthogonal model.submarine.orientation
-                |> Vector2.scale model.submarine.state.rudder
-                |> Vector2.scale (Particle.velocity model.submarine |> Vector2.magnitude |> min 1)
-                |> Vector2.scale 0.01
-
-        frictionForce =
-            force
-                |> Vector2.scale
-                    ((Particle.velocity model.submarine |> Vector2.magnitude) - Vector2.magnitude force)
-                |> Vector2.scale -1
-    in
-    { model
-        | submarine =
-            model.submarine
-                |> Particle.applyForce force
-                |> Particle.applyForce frictionForce
-    }
-
-
-applyRotation : Model -> Model
-applyRotation model =
-    let
-        steeringAuthority : Float
-        steeringAuthority =
-            0.001
-    in
-    { model
-        | submarine =
-            Particle.applyRotationalForce
-                ((model.submarine
-                    |> Particle.velocity
-                    |> Vector2.magnitude
-                 )
-                    * model.submarine.state.rudder
-                    * steeringAuthority
-                )
-                model.submarine
-    }
-
-
-friction : Model -> Model
-friction model =
-    { model
-        | submarine =
-            model.submarine
-                |> Particle.applyRotationalForce -(model.submarine.rotationVelocity * 0.1)
-                |> Particle.applyForce (Particle.velocity model.submarine |> Vector2.scale -0.002)
-    }
-
-
-controlsUpdate : Float -> Model -> Model
-controlsUpdate dt model =
-    { model
-        | submarine = model.submarine |> Particle.updateState (SubmarineState.tickControls dt)
-    }
-
-
-stepParticle : Float -> Model -> Model
-stepParticle dt model =
-    { model | submarine = Particle.step dt model.submarine }
-
-
 
 -- MODEL
 
@@ -131,7 +40,7 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
-        (Particle.new SubmarineState.new Vector2.zero 100)
+        (Particle.new Submarine.new Vector2.zero 100)
         (Array.repeat 8 Nothing)
     , Cmd.none
     )
@@ -154,36 +63,39 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Tick dt ->
-            ( model
-                |> stepParticle dt
-                |> controlsUpdate dt
-                |> applyThrust
-                |> rudderForce
-                |> applyRotation
-                |> friction
+            ( { model
+                | submarine =
+                    model.submarine
+                        |> Submarine.stepParticle dt
+                        |> Submarine.controlsUpdate dt
+                        |> Submarine.applyThrust
+                        |> Submarine.rudderForce
+                        |> Submarine.applyRotation
+                        |> Submarine.friction
+              }
             , Cmd.none
             )
 
         RudderInput r ->
-            ( { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setRudderInput r) }
+            ( { model | submarine = model.submarine |> Particle.updateState (Submarine.setRudderInput r) }
             , Cmd.none
             )
 
         ThrottleInput throttle ->
-            ( { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setThrottleInput throttle) }
+            ( { model | submarine = model.submarine |> Particle.updateState (Submarine.setThrottleInput throttle) }
             , Cmd.none
             )
 
         KeyDown key ->
             ( case key of
                 "w" ->
-                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setThrottleInput 1) }
+                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setThrottleInput 1) }
 
                 "a" ->
-                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setRudderInput -1) }
+                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setRudderInput -1) }
 
                 "d" ->
-                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setRudderInput 1) }
+                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setRudderInput 1) }
 
                 _ ->
                     model
@@ -193,13 +105,13 @@ update msg model =
         KeyUp key ->
             ( case key of
                 "w" ->
-                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setThrottleInput 0) }
+                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setThrottleInput 0) }
 
                 "a" ->
-                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setRudderInput 0) }
+                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setRudderInput 0) }
 
                 "d" ->
-                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setRudderInput 0) }
+                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setRudderInput 0) }
 
                 _ ->
                     model
