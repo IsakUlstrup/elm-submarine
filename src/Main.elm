@@ -28,7 +28,7 @@ type Module
 
 
 type alias Submarine =
-    SubmarineState
+    Particle SubmarineState
 
 
 
@@ -44,11 +44,11 @@ applyThrust model =
 
         force : Vector2
         force =
-            model.submarineParticle.orientation
-                |> Vector2.scale (model.submarineState.throttle * enginePower)
+            model.submarine.orientation
+                |> Vector2.scale (model.submarine.state.throttle * enginePower)
     in
     { model
-        | submarineParticle = Particle.applyForce force model.submarineParticle
+        | submarine = Particle.applyForce force model.submarine
     }
 
 
@@ -56,20 +56,20 @@ rudderForce : Model -> Model
 rudderForce model =
     let
         force =
-            Vector2.orthogonal model.submarineParticle.orientation
-                |> Vector2.scale model.submarineState.rudder
-                |> Vector2.scale (Particle.velocity model.submarineParticle |> Vector2.magnitude |> min 1)
+            Vector2.orthogonal model.submarine.orientation
+                |> Vector2.scale model.submarine.state.rudder
+                |> Vector2.scale (Particle.velocity model.submarine |> Vector2.magnitude |> min 1)
                 |> Vector2.scale 0.01
 
         frictionForce =
             force
                 |> Vector2.scale
-                    ((Particle.velocity model.submarineParticle |> Vector2.magnitude) - Vector2.magnitude force)
+                    ((Particle.velocity model.submarine |> Vector2.magnitude) - Vector2.magnitude force)
                 |> Vector2.scale -1
     in
     { model
-        | submarineParticle =
-            model.submarineParticle
+        | submarine =
+            model.submarine
                 |> Particle.applyForce force
                 |> Particle.applyForce frictionForce
     }
@@ -83,39 +83,39 @@ applyRotation model =
             0.001
     in
     { model
-        | submarineParticle =
+        | submarine =
             Particle.applyRotationalForce
-                ((model.submarineParticle
+                ((model.submarine
                     |> Particle.velocity
                     |> Vector2.magnitude
                  )
-                    * model.submarineState.rudder
+                    * model.submarine.state.rudder
                     * steeringAuthority
                 )
-                model.submarineParticle
+                model.submarine
     }
 
 
 friction : Model -> Model
 friction model =
     { model
-        | submarineParticle =
-            model.submarineParticle
-                |> Particle.applyRotationalForce -(model.submarineParticle.rotationVelocity * 0.1)
-                |> Particle.applyForce (Particle.velocity model.submarineParticle |> Vector2.scale -0.002)
+        | submarine =
+            model.submarine
+                |> Particle.applyRotationalForce -(model.submarine.rotationVelocity * 0.1)
+                |> Particle.applyForce (Particle.velocity model.submarine |> Vector2.scale -0.002)
     }
 
 
 controlsUpdate : Float -> Model -> Model
 controlsUpdate dt model =
     { model
-        | submarineState = SubmarineState.tickControls dt model.submarineState
+        | submarine = model.submarine |> Particle.updateState (SubmarineState.tickControls dt)
     }
 
 
 stepParticle : Float -> Model -> Model
 stepParticle dt model =
-    { model | submarineParticle = Particle.step dt model.submarineParticle }
+    { model | submarine = Particle.step dt model.submarine }
 
 
 
@@ -123,8 +123,7 @@ stepParticle dt model =
 
 
 type alias Model =
-    { submarineParticle : Particle
-    , submarineState : Submarine
+    { submarine : Submarine
     , slots : Array (Maybe Module)
     }
 
@@ -132,8 +131,7 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
-        (Particle.new Vector2.zero 100)
-        SubmarineState.new
+        (Particle.new SubmarineState.new Vector2.zero 100)
         (Array.repeat 8 Nothing)
     , Cmd.none
     )
@@ -167,25 +165,25 @@ update msg model =
             )
 
         RudderInput r ->
-            ( { model | submarineState = SubmarineState.setRudderInput r model.submarineState }
+            ( { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setRudderInput r) }
             , Cmd.none
             )
 
         ThrottleInput throttle ->
-            ( { model | submarineState = SubmarineState.setThrottleInput throttle model.submarineState }
+            ( { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setThrottleInput throttle) }
             , Cmd.none
             )
 
         KeyDown key ->
             ( case key of
                 "w" ->
-                    { model | submarineState = SubmarineState.setThrottleInput 1 model.submarineState }
+                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setThrottleInput 1) }
 
                 "a" ->
-                    { model | submarineState = SubmarineState.setRudderInput -1 model.submarineState }
+                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setRudderInput -1) }
 
                 "d" ->
-                    { model | submarineState = SubmarineState.setRudderInput 1 model.submarineState }
+                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setRudderInput 1) }
 
                 _ ->
                     model
@@ -195,13 +193,13 @@ update msg model =
         KeyUp key ->
             ( case key of
                 "w" ->
-                    { model | submarineState = SubmarineState.setThrottleInput 0 model.submarineState }
+                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setThrottleInput 0) }
 
                 "a" ->
-                    { model | submarineState = SubmarineState.setRudderInput 0 model.submarineState }
+                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setRudderInput 0) }
 
                 "d" ->
-                    { model | submarineState = SubmarineState.setRudderInput 0 model.submarineState }
+                    { model | submarine = model.submarine |> Particle.updateState (SubmarineState.setRudderInput 0) }
 
                 _ ->
                     model
@@ -248,12 +246,12 @@ viewVector attrs vector =
         []
 
 
-viewSubmarine : ( Particle, Submarine ) -> Svg msg
-viewSubmarine ( particle, submarine ) =
+viewSubmarine : Submarine -> Svg msg
+viewSubmarine submarine =
     Svg.g
         []
         [ Svg.circle
-            [ Svg.Attributes.r (String.fromFloat particle.radius)
+            [ Svg.Attributes.r (String.fromFloat submarine.radius)
             , Svg.Attributes.fill "white"
             ]
             []
@@ -263,16 +261,16 @@ viewSubmarine ( particle, submarine ) =
             ]
             [ viewVector
                 [ Svg.Attributes.stroke "red" ]
-                particle.orientation
+                submarine.orientation
             , viewVector
                 [ Svg.Attributes.stroke "green" ]
-                (Vector2.orthogonal particle.orientation |> Vector2.scale -submarine.rudder)
+                (Vector2.orthogonal submarine.orientation |> Vector2.scale -submarine.state.rudder)
             , viewVector
                 [ Svg.Attributes.stroke "orange" ]
-                (particle |> Particle.velocity)
+                (Particle.velocity submarine)
             , viewVector
                 [ Svg.Attributes.stroke "cyan" ]
-                (particle.orientation |> Vector2.scale -1 |> Vector2.rotate -submarine.rudder)
+                (submarine.orientation |> Vector2.scale -1 |> Vector2.rotate -submarine.state.rudder)
             ]
         ]
 
@@ -360,13 +358,13 @@ viewCompass bearing =
         ]
 
 
-viewMovementDebug : Submarine -> Particle -> Html msg
-viewMovementDebug submarine particle =
+viewMovementDebug : Submarine -> Html msg
+viewMovementDebug submarine =
     Svg.svg
         [ Svg.Attributes.viewBox "-250 -250 500 500"
         ]
-        [ viewGrid particle.position
-        , viewSubmarine ( particle, submarine )
+        [ viewGrid submarine.position
+        , viewSubmarine submarine
         ]
 
 
@@ -404,74 +402,74 @@ viewControls submarine =
             , Html.Attributes.style "gap" "0.5rem"
             ]
             [ Html.meter
-                [ Html.Attributes.value (String.fromFloat (submarine.rudder |> min 0 |> abs))
+                [ Html.Attributes.value (String.fromFloat (submarine.state.rudder |> min 0 |> abs))
                 , Html.Attributes.style "transform" "rotate(180deg)"
                 ]
                 []
             , Html.meter
-                [ Html.Attributes.value (String.fromFloat submarine.rudder)
+                [ Html.Attributes.value (String.fromFloat submarine.state.rudder)
                 ]
                 []
             ]
         , Html.h1 [] [ Html.text "Throttle" ]
         , Html.meter
-            [ Html.Attributes.value (String.fromFloat submarine.throttle)
+            [ Html.Attributes.value (String.fromFloat submarine.state.throttle)
             ]
             []
         ]
 
 
-viewCompassModule : Particle -> Html Msg
-viewCompassModule particle =
+viewCompassModule : Submarine -> Html Msg
+viewCompassModule submarine =
     Html.div [ Svg.Attributes.class "module" ]
         [ Svg.svg
             [ Svg.Attributes.viewBox "-50 -50 100 100"
             ]
-            [ Svg.Lazy.lazy viewCompass particle.orientation ]
+            [ Svg.Lazy.lazy viewCompass submarine.orientation ]
         ]
 
 
-viewStateModule : Particle -> Submarine -> Html msg
-viewStateModule particle submarine =
+viewStateModule : Submarine -> Html msg
+viewStateModule submarine =
     Html.div [ Html.Attributes.class "module" ]
         [ Html.p []
             [ Html.text "Position: "
-            , Html.text (prettyFloat particle.position.x)
+            , Html.text (prettyFloat submarine.position.x)
             , Html.text ", "
-            , Html.text (prettyFloat particle.position.y)
+            , Html.text (prettyFloat submarine.position.y)
             ]
         , Html.p []
             [ Html.text "Rotation (deg): "
-            , Html.text (prettyFloat (Vector2.angleDegrees particle.orientation))
+            , Html.text (prettyFloat (Vector2.angleDegrees submarine.orientation))
             ]
         , Html.p []
             [ Html.text "Rotation (rad): "
-            , Html.text (prettyFloat (Vector2.angleRadian particle.orientation))
+            , Html.text (prettyFloat (Vector2.angleRadian submarine.orientation))
             ]
         , Html.p []
             [ Html.text "Velocity: "
-            , Html.text (particle |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
+            , Html.text (submarine |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
             ]
         , Html.p []
             [ Html.text "Throttle: "
-            , Html.text (submarine.throttle |> prettyFloat)
+            , Html.text (submarine.state.throttle |> prettyFloat)
             ]
         , Html.p []
             [ Html.text "Rudder: "
-            , Html.text (submarine.rudder |> prettyFloat)
+            , Html.text (submarine.state.rudder |> prettyFloat)
             ]
         ]
 
 
-viewMovementModule : Particle -> Submarine -> Html msg
-viewMovementModule particle submarine =
+viewMovementModule : Submarine -> Html msg
+viewMovementModule submarine =
     Html.div [ Svg.Attributes.class "module", Svg.Attributes.class "fill" ]
-        [ Svg.Lazy.lazy2 viewMovementDebug submarine particle
+        [ Svg.Lazy.lazy viewMovementDebug submarine
         ]
 
 
-viewModule : Particle -> Submarine -> Module -> Html Msg
-viewModule particle submarine m =
+viewModule : Submarine -> Module -> Html Msg
+viewModule submarine m =
     case m of
         InputButtons ->
             viewInputButtons
@@ -480,21 +478,21 @@ viewModule particle submarine m =
             viewControls submarine
 
         StateView ->
-            viewStateModule particle submarine
+            viewStateModule submarine
 
         Compass ->
-            viewCompassModule particle
+            viewCompassModule submarine
 
         MovementDebug ->
-            viewMovementModule particle submarine
+            viewMovementModule submarine
 
 
-viewSlot : Particle -> Submarine -> ( Int, Maybe Module ) -> Html Msg
-viewSlot particle submarine ( index, slot ) =
+viewSlot : Submarine -> ( Int, Maybe Module ) -> Html Msg
+viewSlot submarine ( index, slot ) =
     Html.div [ Html.Attributes.class "slot" ]
         (case slot of
             Just m ->
-                [ viewModule particle submarine m ]
+                [ viewModule submarine m ]
 
             Nothing ->
                 [ Html.button [ Html.Attributes.attribute "popovertarget" ("add-module-" ++ String.fromInt index) ] [ Html.text "Install module" ]
@@ -521,7 +519,7 @@ view model =
     main_ [ Html.Attributes.id "app" ]
         (model.slots
             |> Array.toIndexedList
-            |> List.map (viewSlot model.submarineParticle model.submarineState)
+            |> List.map (viewSlot model.submarine)
         )
 
 

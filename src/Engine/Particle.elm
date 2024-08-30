@@ -6,6 +6,7 @@ module Engine.Particle exposing
     , setMass
     , setPosition
     , step
+    , updateState
     , velocity
     )
 
@@ -14,7 +15,7 @@ import Engine.Vector2 as Vector2 exposing (Vector2)
 
 {-| A particle meant to be used with Verlet integration
 -}
-type alias Particle =
+type alias Particle a =
     { position : Vector2
     , oldPosition : Vector2
     , acceleration : Vector2
@@ -23,17 +24,23 @@ type alias Particle =
     , rotationAcceleration : Float
     , mass : Float
     , radius : Float
+    , state : a
     }
 
 
 {-| Particle constructor
 -}
-new : Vector2 -> Float -> Particle
-new position mass =
-    Particle position position Vector2.zero Vector2.east 0 0 mass 50
+new : a -> Vector2 -> Float -> Particle a
+new state position mass =
+    Particle position position Vector2.zero Vector2.east 0 0 mass 50 state
 
 
-applyForce : Vector2 -> Particle -> Particle
+updateState : (a -> a) -> Particle a -> Particle a
+updateState f particle =
+    { particle | state = f particle.state }
+
+
+applyForce : Vector2 -> Particle a -> Particle a
 applyForce force particle =
     if particle.mass /= 0 then
         { particle
@@ -47,7 +54,7 @@ applyForce force particle =
         particle
 
 
-applyRotationalForce : Float -> Particle -> Particle
+applyRotationalForce : Float -> Particle a -> Particle a
 applyRotationalForce force particle =
     if particle.mass /= 0 then
         { particle | rotationAcceleration = particle.rotationAcceleration + (force / particle.mass) }
@@ -58,24 +65,24 @@ applyRotationalForce force particle =
 
 {-| Derive velocity vector based on old position
 -}
-velocity : Particle -> Vector2
+velocity : Particle a -> Vector2
 velocity particle =
     Vector2.subtract particle.oldPosition particle.position
 
 
-setPosition : Vector2 -> Particle -> Particle
+setPosition : Vector2 -> Particle a -> Particle a
 setPosition position particle =
     { particle | position = position, oldPosition = Vector2.subtract (velocity particle) position }
 
 
-setMass : Float -> Particle -> Particle
+setMass : Float -> Particle a -> Particle a
 setMass mass particle =
     { particle | mass = max 0 mass }
 
 
 {-| Step forwards using Verlet integration
 -}
-step : Float -> Particle -> Particle
+step : Float -> Particle a -> Particle a
 step dt particle =
     { particle
         | position =
