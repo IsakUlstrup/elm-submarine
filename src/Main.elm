@@ -314,25 +314,29 @@ viewMovementDebug submarine =
 
 viewInputButtons : Int -> ButtonState -> Html Msg
 viewInputButtons index state =
+    let
+        pointerMsg direction pressed =
+            Decode.succeed (ClickedInputButton index direction pressed)
+    in
     Html.div [ Svg.Attributes.class "module" ]
         [ Html.button
-            [ Html.Events.on "pointerdown" (Decode.succeed (ClickedInputButton index Left True))
-            , Html.Events.on "pointerup" (Decode.succeed (ClickedInputButton index Left False))
-            , Html.Events.on "pointerleave" (Decode.succeed (ClickedInputButton index Left False))
+            [ Html.Events.on "pointerdown" (pointerMsg Left True)
+            , Html.Events.on "pointerup" (pointerMsg Left False)
+            , Html.Events.on "pointerleave" (pointerMsg Left False)
             , Html.Attributes.classList [ ( "down", state.left ) ]
             ]
             [ Html.text "Port" ]
         , Html.button
-            [ Html.Events.on "pointerdown" (Decode.succeed (ClickedInputButton index Forwards True))
-            , Html.Events.on "pointerup" (Decode.succeed (ClickedInputButton index Forwards False))
-            , Html.Events.on "pointerleave" (Decode.succeed (ClickedInputButton index Forwards False))
+            [ Html.Events.on "pointerdown" (pointerMsg Forwards True)
+            , Html.Events.on "pointerup" (pointerMsg Forwards False)
+            , Html.Events.on "pointerleave" (pointerMsg Forwards False)
             , Html.Attributes.classList [ ( "down", state.forwards ) ]
             ]
             [ Html.text "Forwards" ]
         , Html.button
-            [ Html.Events.on "pointerdown" (Decode.succeed (ClickedInputButton index Right True))
-            , Html.Events.on "pointerup" (Decode.succeed (ClickedInputButton index Right False))
-            , Html.Events.on "pointerleave" (Decode.succeed (ClickedInputButton index Right False))
+            [ Html.Events.on "pointerdown" (pointerMsg Right True)
+            , Html.Events.on "pointerup" (pointerMsg Right False)
+            , Html.Events.on "pointerleave" (pointerMsg Right False)
             , Html.Attributes.classList [ ( "down", state.right ) ]
             ]
             [ Html.text "Starboard" ]
