@@ -21,6 +21,7 @@ import Svg.Lazy
 
 type Module
     = InputButtons ButtonState
+    | KeyboardInput ButtonState
     | ControlsState
     | StateDump
     | Compass
@@ -48,6 +49,32 @@ updateButtonState f mod =
 
         _ ->
             mod
+
+
+updateKeyboardInputState : (ButtonState -> ButtonState) -> Module -> Module
+updateKeyboardInputState f mod =
+    case mod of
+        KeyboardInput state ->
+            KeyboardInput (f state)
+
+        _ ->
+            mod
+
+
+handleKeyPress : String -> Bool -> ButtonState -> ButtonState
+handleKeyPress key pressed state =
+    case key of
+        "a" ->
+            setDirectionPressed Left pressed state
+
+        "d" ->
+            setDirectionPressed Right pressed state
+
+        "w" ->
+            setDirectionPressed Forwards pressed state
+
+        _ ->
+            state
 
 
 setDirectionPressed : Direction -> Bool -> ButtonState -> ButtonState
@@ -84,6 +111,11 @@ updateSlot index f model =
     { model | slots = Array.set index slot model.slots }
 
 
+updateSlots : (Module -> Module) -> Model -> Model
+updateSlots f model =
+    { model | slots = Array.map (Maybe.map f) model.slots }
+
+
 applyModules : Model -> Model
 applyModules model =
     let
@@ -93,6 +125,21 @@ applyModules model =
         applyModule m s =
             case m of
                 InputButtons state ->
+                    if state.left then
+                        s |> Particle.updateState (Submarine.setRudderInput -1)
+
+                    else if state.right then
+                        s |> Particle.updateState (Submarine.setRudderInput 1)
+
+                    else if state.forwards then
+                        s |> Particle.updateState (Submarine.setThrottleInput 1)
+
+                    else
+                        s
+                            |> Particle.updateState (Submarine.setThrottleInput 0)
+                            |> Particle.updateState (Submarine.setRudderInput 0)
+
+                KeyboardInput state ->
                     if state.left then
                         s |> Particle.updateState (Submarine.setRudderInput -1)
 
@@ -153,34 +200,12 @@ update msg model =
             )
 
         KeyDown key ->
-            ( case key of
-                "w" ->
-                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setThrottleInput 1) }
-
-                "a" ->
-                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setRudderInput -1) }
-
-                "d" ->
-                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setRudderInput 1) }
-
-                _ ->
-                    model
+            ( updateSlots (updateKeyboardInputState <| handleKeyPress key True) model
             , Cmd.none
             )
 
         KeyUp key ->
-            ( case key of
-                "w" ->
-                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setThrottleInput 0) }
-
-                "a" ->
-                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setRudderInput 0) }
-
-                "d" ->
-                    { model | submarine = model.submarine |> Particle.updateState (Submarine.setRudderInput 0) }
-
-                _ ->
-                    model
+            ( updateSlots (updateKeyboardInputState <| handleKeyPress key False) model
             , Cmd.none
             )
 
@@ -343,6 +368,24 @@ viewInputButtons index state =
         ]
 
 
+viewKeyboardInput : ButtonState -> Html Msg
+viewKeyboardInput state =
+    Html.div [ Svg.Attributes.class "module" ]
+        [ Html.button
+            [ Html.Attributes.classList [ ( "down", state.left ) ]
+            ]
+            [ Html.text "Port" ]
+        , Html.button
+            [ Html.Attributes.classList [ ( "down", state.forwards ) ]
+            ]
+            [ Html.text "Forwards" ]
+        , Html.button
+            [ Html.Attributes.classList [ ( "down", state.right ) ]
+            ]
+            [ Html.text "Starboard" ]
+        ]
+
+
 viewControlsState : Submarine -> Html Msg
 viewControlsState submarine =
     Html.div [ Html.Attributes.class "module" ]
@@ -458,6 +501,9 @@ viewModule index submarine m =
         InputButtons state ->
             viewInputButtons index state
 
+        KeyboardInput state ->
+            viewKeyboardInput state
+
         ControlsState ->
             viewControlsState submarine
 
@@ -488,6 +534,7 @@ viewSlot submarine ( index, slot ) =
                     [ Html.h3 [] [ Html.text ("Slot #" ++ String.fromInt index) ]
                     , Html.ul [ Html.Attributes.class "modules" ]
                         [ Html.li [ Html.Events.onClick (ClickedAddModule index (InputButtons { left = False, forwards = False, right = False })) ] [ Html.text "Input buttons" ]
+                        , Html.li [ Html.Events.onClick (ClickedAddModule index (KeyboardInput { left = False, forwards = False, right = False })) ] [ Html.text "Keyboard input" ]
                         , Html.li [ Html.Events.onClick (ClickedAddModule index ControlsState) ] [ Html.text "Controls state" ]
                         , Html.li [ Html.Events.onClick (ClickedAddModule index StateDump) ] [ Html.text "State view" ]
                         , Html.li [ Html.Events.onClick (ClickedAddModule index Compass) ] [ Html.text "Compass" ]
