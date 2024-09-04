@@ -128,8 +128,6 @@ init _ =
 
 type Msg
     = Tick Float
-    | RudderInput Float
-    | ThrottleInput Float
     | KeyDown String
     | KeyUp String
     | ClickedAddModule Int Module
@@ -151,16 +149,6 @@ update msg model =
                         |> Submarine.friction
               }
                 |> applyModules
-            , Cmd.none
-            )
-
-        RudderInput r ->
-            ( { model | submarine = model.submarine |> Particle.updateState (Submarine.setRudderInput r) }
-            , Cmd.none
-            )
-
-        ThrottleInput throttle ->
-            ( { model | submarine = model.submarine |> Particle.updateState (Submarine.setThrottleInput throttle) }
             , Cmd.none
             )
 
