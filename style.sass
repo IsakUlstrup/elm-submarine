@@ -43,9 +43,9 @@ body
 
 .slot
     aspect-ratio: 1/1
-    box-shadow: 0rem 0rem 0.7rem rgba(0, 0, 0, 0.4) inset
-    border-radius: 1.2rem
-    border: 0.1rem solid rgba(0, 0, 0, 0.3)
+    // // box-shadow: 0rem 0rem 0.7rem rgba(0, 0, 0, 0.4) inset
+    // border-radius: 1.2rem
+    // border: 0.1rem solid rgba(0, 0, 0, 0.3)
     padding: 0.2rem
     display: flex
     justify-content: center
@@ -66,7 +66,7 @@ body
         flex-direction: column
         gap: 0.5rem
 
-$module-top: -0.75rem
+$module-top: -0.25rem
 @keyframes slide-down
     0%
         top: -2rem
@@ -80,7 +80,9 @@ $module-top: -0.75rem
     width: 100%
     height: 100%
     top: $module-top
-    background: $pink
+    background: lighten($beige, 5)
+    color: $grey
+    fill: $grey
 
     animation: slide-down 300ms cubic-bezier(0.34, 1.56, 0.64, 1)
 
@@ -100,7 +102,7 @@ $module-top: -0.75rem
         content: ""
         position: absolute
         border-radius: 1rem
-        background: lighten($pink, 10)
+        background: darken($beige, 10)
         left: 0
         right: 0
         top: 0

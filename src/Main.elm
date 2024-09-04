@@ -308,7 +308,7 @@ viewGrid pos =
             200
     in
     Svg.g
-        [ Svg.Attributes.stroke "white"
+        [ Svg.Attributes.stroke "#262626"
         , Svg.Attributes.transform
             ("translate("
                 ++ String.fromInt -(modBy spacing (round pos.x))
