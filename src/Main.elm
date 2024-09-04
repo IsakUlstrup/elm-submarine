@@ -20,11 +20,47 @@ import Svg.Lazy
 
 
 type Module
-    = InputButtons
+    = InputButtons ButtonState
     | ControlsState
     | StateDump
     | Compass
     | Movement
+
+
+type alias ButtonState =
+    { left : Bool
+    , forwards : Bool
+    , right : Bool
+    }
+
+
+type Direction
+    = Left
+    | Forwards
+    | Right
+
+
+updateButtonState : (ButtonState -> ButtonState) -> Module -> Module
+updateButtonState f mod =
+    case mod of
+        InputButtons state ->
+            InputButtons (f state)
+
+        _ ->
+            mod
+
+
+setDirectionPressed : Direction -> Bool -> ButtonState -> ButtonState
+setDirectionPressed direction pressed state =
+    case direction of
+        Left ->
+            { state | left = pressed }
+
+        Forwards ->
+            { state | forwards = pressed }
+
+        Right ->
+            { state | right = pressed }
 
 
 
@@ -35,6 +71,46 @@ type alias Model =
     { submarine : Submarine
     , slots : Array (Maybe Module)
     }
+
+
+updateSlot : Int -> (Module -> Module) -> Model -> Model
+updateSlot index f model =
+    let
+        slot =
+            Array.get index model.slots
+                |> Maybe.andThen
+                    (Maybe.map f)
+    in
+    { model | slots = Array.set index slot model.slots }
+
+
+applyModules : Model -> Model
+applyModules model =
+    let
+        modules =
+            model.slots |> Array.toList |> List.filterMap identity
+
+        applyModule m s =
+            case m of
+                InputButtons state ->
+                    if state.left then
+                        s |> Particle.updateState (Submarine.setRudderInput -1)
+
+                    else if state.right then
+                        s |> Particle.updateState (Submarine.setRudderInput 1)
+
+                    else if state.forwards then
+                        s |> Particle.updateState (Submarine.setThrottleInput 1)
+
+                    else
+                        s
+                            |> Particle.updateState (Submarine.setThrottleInput 0)
+                            |> Particle.updateState (Submarine.setRudderInput 0)
+
+                _ ->
+                    s
+    in
+    { model | submarine = List.foldl applyModule model.submarine modules }
 
 
 init : () -> ( Model, Cmd Msg )
@@ -57,6 +133,7 @@ type Msg
     | KeyDown String
     | KeyUp String
     | ClickedAddModule Int Module
+    | ClickedInputButton Int Direction Bool
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -73,6 +150,7 @@ update msg model =
                         |> Submarine.applyRotation
                         |> Submarine.friction
               }
+                |> applyModules
             , Cmd.none
             )
 
@@ -120,6 +198,11 @@ update msg model =
 
         ClickedAddModule index mod ->
             ( { model | slots = Array.set index (Just mod) model.slots }
+            , Cmd.none
+            )
+
+        ClickedInputButton index direction pressed ->
+            ( updateSlot index (updateButtonState <| setDirectionPressed direction pressed) model
             , Cmd.none
             )
 
@@ -241,25 +324,28 @@ viewMovementDebug submarine =
         ]
 
 
-viewInputButtons : Html Msg
-viewInputButtons =
+viewInputButtons : Int -> ButtonState -> Html Msg
+viewInputButtons index state =
     Html.div [ Svg.Attributes.class "module" ]
         [ Html.button
-            [ Html.Events.on "pointerdown" (Decode.succeed (RudderInput -1))
-            , Html.Events.on "pointerup" (Decode.succeed (RudderInput 0))
-            , Html.Events.on "pointerleave" (Decode.succeed (RudderInput 0))
+            [ Html.Events.on "pointerdown" (Decode.succeed (ClickedInputButton index Left True))
+            , Html.Events.on "pointerup" (Decode.succeed (ClickedInputButton index Left False))
+            , Html.Events.on "pointerleave" (Decode.succeed (ClickedInputButton index Left False))
+            , Html.Attributes.classList [ ( "down", state.left ) ]
             ]
             [ Html.text "Port" ]
         , Html.button
-            [ Html.Events.on "pointerdown" (Decode.succeed (ThrottleInput 1))
-            , Html.Events.on "pointerup" (Decode.succeed (ThrottleInput 0))
-            , Html.Events.on "pointerleave" (Decode.succeed (ThrottleInput 0))
+            [ Html.Events.on "pointerdown" (Decode.succeed (ClickedInputButton index Forwards True))
+            , Html.Events.on "pointerup" (Decode.succeed (ClickedInputButton index Forwards False))
+            , Html.Events.on "pointerleave" (Decode.succeed (ClickedInputButton index Forwards False))
+            , Html.Attributes.classList [ ( "down", state.forwards ) ]
             ]
             [ Html.text "Forwards" ]
         , Html.button
-            [ Html.Events.on "pointerdown" (Decode.succeed (RudderInput 1))
-            , Html.Events.on "pointerup" (Decode.succeed (RudderInput 0))
-            , Html.Events.on "pointerleave" (Decode.succeed (RudderInput 0))
+            [ Html.Events.on "pointerdown" (Decode.succeed (ClickedInputButton index Right True))
+            , Html.Events.on "pointerup" (Decode.succeed (ClickedInputButton index Right False))
+            , Html.Events.on "pointerleave" (Decode.succeed (ClickedInputButton index Right False))
+            , Html.Attributes.classList [ ( "down", state.right ) ]
             ]
             [ Html.text "Starboard" ]
         ]
@@ -374,11 +460,11 @@ viewMovement submarine =
         ]
 
 
-viewModule : Submarine -> Module -> Html Msg
-viewModule submarine m =
+viewModule : Int -> Submarine -> Module -> Html Msg
+viewModule index submarine m =
     case m of
-        InputButtons ->
-            viewInputButtons
+        InputButtons state ->
+            viewInputButtons index state
 
         ControlsState ->
             viewControlsState submarine
@@ -398,7 +484,7 @@ viewSlot submarine ( index, slot ) =
     Html.div [ Html.Attributes.class "slot" ]
         (case slot of
             Just m ->
-                [ viewModule submarine m ]
+                [ viewModule index submarine m ]
 
             Nothing ->
                 [ Html.button [ Html.Attributes.attribute "popovertarget" ("add-module-" ++ String.fromInt index) ] [ Html.text "Install module" ]
@@ -409,7 +495,7 @@ viewSlot submarine ( index, slot ) =
                     ]
                     [ Html.h3 [] [ Html.text ("Slot #" ++ String.fromInt index) ]
                     , Html.ul [ Html.Attributes.class "modules" ]
-                        [ Html.li [ Html.Events.onClick (ClickedAddModule index InputButtons) ] [ Html.text "Input buttons" ]
+                        [ Html.li [ Html.Events.onClick (ClickedAddModule index (InputButtons { left = False, forwards = False, right = False })) ] [ Html.text "Input buttons" ]
                         , Html.li [ Html.Events.onClick (ClickedAddModule index ControlsState) ] [ Html.text "Controls state" ]
                         , Html.li [ Html.Events.onClick (ClickedAddModule index StateDump) ] [ Html.text "State view" ]
                         , Html.li [ Html.Events.onClick (ClickedAddModule index Compass) ] [ Html.text "Compass" ]
