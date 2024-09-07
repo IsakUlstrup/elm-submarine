@@ -9,41 +9,12 @@ import Dict exposing (Dict)
 
 
 type Signal
-    = Signal Float
-
-
-newSignal : Float -> Signal
-newSignal n =
-    Signal (clamp -1 1 n)
-
-
-signalToBool : Signal -> Bool
-signalToBool (Signal signal) =
-    signal == 1
-
-
-signalFromBool : Bool -> Signal
-signalFromBool flag =
-    if flag then
-        Signal 1
-
-    else
-        Signal -1
-
-
-signalToFloat : Signal -> Float
-signalToFloat (Signal signal) =
-    signal
-
-
-signalAdd : Float -> Signal -> Signal
-signalAdd n (Signal signal) =
-    Signal (signal + n |> clamp -1 1)
+    = Float Float
+    | Bool Bool
 
 
 
 -- MODULE
--- add event listener
 
 
 type alias Part a =

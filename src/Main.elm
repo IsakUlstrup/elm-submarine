@@ -4,7 +4,7 @@ import Array
 import Browser
 import Browser.Events
 import Dict
-import Engine.Module exposing (Module, Modules, Signal)
+import Engine.Module exposing (Module, Modules, Signal(..))
 import Engine.Particle as Particle
 import Engine.Vector2 as Vector2
 import Html exposing (Html, main_)
@@ -22,7 +22,7 @@ type Part
     = Button Bool
     | ToggleButton Bool
     | Slider Float
-    | SteeringController String Signal
+    | SteeringController String Float
     | KeyboardToggle String Bool
 
 
@@ -30,7 +30,7 @@ buttonSteeringModule : Module Part
 buttonSteeringModule =
     Engine.Module.newModule
         [ ( "SteeringSlider", Slider 0 )
-        , ( "Steering", SteeringController "SteeringSlider" (Engine.Module.newSignal 0) )
+        , ( "Steering", SteeringController "SteeringSlider" 0 )
         , ( "Button", Button False )
         ]
 
@@ -160,7 +160,7 @@ applyPart part submarine =
     case part of
         SteeringController _ value ->
             submarine
-                |> Particle.updateState (Submarine.setRudderInput (Engine.Module.signalToFloat value))
+                |> Particle.updateState (Submarine.setRudderInput value)
 
         _ ->
             submarine
@@ -226,12 +226,12 @@ update msg model =
             )
 
         KeyDown key ->
-            ( { model | modules = Engine.Module.updateModules updatePart { name = key, signal = Engine.Module.newSignal 1 } model.modules }
+            ( { model | modules = Engine.Module.updateModules updatePart { name = key, signal = Bool True } model.modules }
             , Cmd.none
             )
 
         KeyUp key ->
-            ( { model | modules = Engine.Module.updateModules updatePart { name = key, signal = Engine.Module.newSignal -1 } model.modules }
+            ( { model | modules = Engine.Module.updateModules updatePart { name = key, signal = Bool False } model.modules }
             , Cmd.none
             )
 
@@ -243,43 +243,46 @@ update msg model =
 
 updatePart : Engine.Module.ModuleMsg -> String -> Part -> Part
 updatePart moduleMsg name part =
-    case part of
-        SteeringController inputSignal signal ->
+    case ( part, moduleMsg.signal ) of
+        ( SteeringController inputSignal signal, Float value ) ->
             (if moduleMsg.name == inputSignal then
-                moduleMsg.signal
+                value
 
              else
                 signal
             )
                 |> SteeringController inputSignal
 
-        Slider _ ->
+        ( Slider _, Float float ) ->
             if name == moduleMsg.name then
-                Slider (Engine.Module.signalToFloat moduleMsg.signal)
+                Slider float
 
             else
                 part
 
-        KeyboardToggle inputSignal _ ->
+        ( KeyboardToggle inputSignal _, Bool bool ) ->
             if moduleMsg.name == inputSignal then
-                KeyboardToggle inputSignal (Engine.Module.signalToBool moduleMsg.signal)
+                KeyboardToggle inputSignal bool
 
             else
                 part
 
-        Button _ ->
+        ( Button _, Bool bool ) ->
             if name == moduleMsg.name then
-                Button (Engine.Module.signalToBool moduleMsg.signal)
+                Button bool
 
             else
                 part
 
-        ToggleButton _ ->
+        ( ToggleButton _, Bool bool ) ->
             if name == moduleMsg.name then
-                ToggleButton (Engine.Module.signalToBool moduleMsg.signal)
+                ToggleButton bool
 
             else
                 part
+
+        _ ->
+            part
 
 
 
@@ -591,9 +594,9 @@ viewPart ( name, part ) =
         Button pressed ->
             Html.button
                 [ Html.Events.onMouseDown
-                    (msg (Engine.Module.newSignal 1))
+                    (msg (Bool True))
                 , Html.Events.onMouseUp
-                    (msg (Engine.Module.newSignal 0))
+                    (msg (Bool False))
                 , Html.Attributes.classList [ ( "down", pressed ) ]
                 ]
                 [ Html.text name ]
@@ -601,7 +604,7 @@ viewPart ( name, part ) =
         ToggleButton pressed ->
             Html.button
                 [ Html.Events.onMouseDown
-                    (msg (Engine.Module.signalFromBool (not pressed)))
+                    (msg (Bool (not pressed)))
                 , Html.Attributes.classList [ ( "down", pressed ) ]
                 ]
                 [ Html.text name ]
@@ -616,14 +619,14 @@ viewPart ( name, part ) =
                 , Html.Events.onInput
                     (String.toFloat
                         >> Maybe.withDefault value
-                        >> Engine.Module.newSignal
+                        >> Float
                         >> msg
                     )
                 ]
                 []
 
         SteeringController _ value ->
-            Html.div [] [ Html.p [] [ Html.text "Rudder input" ], Html.text (value |> Engine.Module.signalToFloat |> String.fromFloat) ]
+            Html.div [] [ Html.p [] [ Html.text "Rudder input" ], Html.text (value |> String.fromFloat) ]
 
         KeyboardToggle _ pressed ->
             Html.div []
