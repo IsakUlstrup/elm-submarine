@@ -126,4 +126,4 @@ setThrottleInput throttle submarine =
 
 setRudderInput : Float -> SubmarineState -> SubmarineState
 setRudderInput r submarine =
-    { submarine | rudderInput = r |> clamp -1 1 }
+    { submarine | rudderInput = submarine.rudderInput + r |> clamp -1 1 }
