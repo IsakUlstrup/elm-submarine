@@ -6,12 +6,14 @@ import Browser.Events
 import Dict
 import Engine.Module exposing (Module, Modules, Signal(..))
 import Engine.Particle as Particle
-import Engine.Vector2 as Vector2
+import Engine.Vector2 as Vector2 exposing (Vector2)
 import Html exposing (Html, main_)
 import Html.Attributes
 import Html.Events
 import Json.Decode as Decode exposing (Decoder)
 import Submarine exposing (Submarine)
+import Svg exposing (Svg)
+import Svg.Attributes
 
 
 
@@ -24,6 +26,7 @@ type Part
     | Slider Float
     | SteeringController String Float
     | KeyboardToggle String Bool
+    | MovementDisplay
 
 
 buttonSteeringModule : Module Part
@@ -41,6 +44,13 @@ keyboardInputModule =
         [ ( "Left", KeyboardToggle "a" False )
         , ( "Right", KeyboardToggle "d" False )
         , ( "Toggle", ToggleButton False )
+        ]
+
+
+movementDisplayModule : Module Part
+movementDisplayModule =
+    Engine.Module.newModule
+        [ ( "Display", MovementDisplay )
         ]
 
 
@@ -183,7 +193,7 @@ init _ =
         -- (Array.repeat 8 Nothing)
         (Engine.Module.empty
             |> Engine.Module.addModule buttonSteeringModule
-            |> Engine.Module.addModule keyboardInputModule
+            |> Engine.Module.addModule movementDisplayModule
             |> Engine.Module.addModule buttonSteeringModule
             |> Engine.Module.addModule keyboardInputModule
         )
@@ -304,96 +314,110 @@ updatePart moduleMsg name part =
 --             x ++ "." ++ String.left 1 (String.concat xs)
 --         [] ->
 --             "Error"
--- viewVector : List (Svg.Attribute msg) -> Vector2 -> Svg msg
--- viewVector attrs vector =
---     let
---         ( x2, y2 ) =
---             ( vector.x * 50, vector.y * 50 )
---     in
---     Svg.line
---         ([ Svg.Attributes.x1 "0"
---          , Svg.Attributes.y1 "0"
---          , Svg.Attributes.x2 (String.fromFloat x2)
---          , Svg.Attributes.y2 (String.fromFloat y2)
---          ]
---             ++ attrs
---         )
---         []
--- viewSubmarine : Submarine -> Svg msg
--- viewSubmarine submarine =
---     Svg.g
---         []
---         [ Svg.circle
---             [ Svg.Attributes.r (String.fromFloat submarine.radius)
---             , Svg.Attributes.fill "white"
---             ]
---             []
---         , Svg.g
---             [ Svg.Attributes.strokeWidth "7"
---             , Svg.Attributes.strokeLinecap "round"
---             ]
---             [ viewVector
---                 [ Svg.Attributes.stroke "red" ]
---                 submarine.orientation
---             , viewVector
---                 [ Svg.Attributes.stroke "green" ]
---                 (Vector2.orthogonal submarine.orientation |> Vector2.scale -submarine.state.rudder)
---             , viewVector
---                 [ Svg.Attributes.stroke "orange" ]
---                 (Particle.velocity submarine)
---             , viewVector
---                 [ Svg.Attributes.stroke "cyan" ]
---                 (submarine.orientation |> Vector2.scale -1 |> Vector2.rotate -submarine.state.rudder)
---             ]
---         ]
--- viewGrid : Vector2 -> Svg msg
--- viewGrid pos =
---     let
---         verticalLine x =
---             Svg.line
---                 [ Svg.Attributes.x1 (String.fromInt x)
---                 , Svg.Attributes.y1 "-500"
---                 , Svg.Attributes.x2 (String.fromInt x)
---                 , Svg.Attributes.y2 "500"
---                 ]
---                 []
---         horizontalLine y =
---             Svg.line
---                 [ Svg.Attributes.x1 "-500"
---                 , Svg.Attributes.y1 (String.fromInt y)
---                 , Svg.Attributes.x2 "500"
---                 , Svg.Attributes.y2 (String.fromInt y)
---                 ]
---                 []
---         spacing =
---             200
---     in
---     Svg.g
---         [ Svg.Attributes.stroke "#262626"
---         , Svg.Attributes.transform
---             ("translate("
---                 ++ String.fromInt -(modBy spacing (round pos.x))
---                 ++ ", "
---                 ++ String.fromInt -(modBy spacing (round pos.y))
---                 ++ ")"
---             )
---         ]
---         (List.range -2 2
---             |> List.concatMap
---                 (\i ->
---                     [ verticalLine (i * spacing)
---                     , horizontalLine (i * spacing)
---                     ]
---                 )
---         )
--- viewMovementDebug : Submarine -> Html msg
--- viewMovementDebug submarine =
---     Svg.svg
---         [ Svg.Attributes.viewBox "-250 -250 500 500"
---         ]
---         [ viewGrid submarine.position
---         , viewSubmarine submarine
---         ]
+
+
+viewVector : List (Svg.Attribute msg) -> Vector2 -> Svg msg
+viewVector attrs vector =
+    let
+        ( x2, y2 ) =
+            ( vector.x * 50, vector.y * 50 )
+    in
+    Svg.line
+        ([ Svg.Attributes.x1 "0"
+         , Svg.Attributes.y1 "0"
+         , Svg.Attributes.x2 (String.fromFloat x2)
+         , Svg.Attributes.y2 (String.fromFloat y2)
+         ]
+            ++ attrs
+        )
+        []
+
+
+viewSubmarine : Submarine -> Svg msg
+viewSubmarine submarine =
+    Svg.g
+        []
+        [ Svg.circle
+            [ Svg.Attributes.r (String.fromFloat submarine.radius)
+            , Svg.Attributes.fill "white"
+            ]
+            []
+        , Svg.g
+            [ Svg.Attributes.strokeWidth "7"
+            , Svg.Attributes.strokeLinecap "round"
+            ]
+            [ viewVector
+                [ Svg.Attributes.stroke "red" ]
+                submarine.orientation
+            , viewVector
+                [ Svg.Attributes.stroke "green" ]
+                (Vector2.orthogonal submarine.orientation |> Vector2.scale -submarine.state.rudder)
+            , viewVector
+                [ Svg.Attributes.stroke "orange" ]
+                (Particle.velocity submarine)
+            , viewVector
+                [ Svg.Attributes.stroke "cyan" ]
+                (submarine.orientation |> Vector2.scale -1 |> Vector2.rotate -submarine.state.rudder)
+            ]
+        ]
+
+
+viewGrid : Vector2 -> Svg msg
+viewGrid pos =
+    let
+        verticalLine x =
+            Svg.line
+                [ Svg.Attributes.x1 (String.fromInt x)
+                , Svg.Attributes.y1 "-500"
+                , Svg.Attributes.x2 (String.fromInt x)
+                , Svg.Attributes.y2 "500"
+                ]
+                []
+
+        horizontalLine y =
+            Svg.line
+                [ Svg.Attributes.x1 "-500"
+                , Svg.Attributes.y1 (String.fromInt y)
+                , Svg.Attributes.x2 "500"
+                , Svg.Attributes.y2 (String.fromInt y)
+                ]
+                []
+
+        spacing =
+            200
+    in
+    Svg.g
+        [ Svg.Attributes.stroke "#262626"
+        , Svg.Attributes.transform
+            ("translate("
+                ++ String.fromInt -(modBy spacing (round pos.x))
+                ++ ", "
+                ++ String.fromInt -(modBy spacing (round pos.y))
+                ++ ")"
+            )
+        ]
+        (List.range -2 2
+            |> List.concatMap
+                (\i ->
+                    [ verticalLine (i * spacing)
+                    , horizontalLine (i * spacing)
+                    ]
+                )
+        )
+
+
+viewMovementDebug : Submarine -> Html msg
+viewMovementDebug submarine =
+    Svg.svg
+        [ Svg.Attributes.viewBox "-250 -250 500 500"
+        , Svg.Attributes.class "movement-debug"
+        ]
+        [ viewGrid submarine.position
+        , viewSubmarine submarine
+        ]
+
+
+
 -- viewInputButtons : Int -> ButtonState -> Html Msg
 -- viewInputButtons index state =
 --     let
@@ -582,8 +606,8 @@ updatePart moduleMsg name part =
 --         )
 
 
-viewPart : ( String, Part ) -> Html Engine.Module.ModuleMsg
-viewPart ( name, part ) =
+viewPart : Submarine -> ( String, Part ) -> Html Engine.Module.ModuleMsg
+viewPart submarine ( name, part ) =
     let
         msg s =
             { name = name
@@ -640,13 +664,16 @@ viewPart ( name, part ) =
                     )
                 ]
 
+        MovementDisplay ->
+            viewMovementDebug submarine
 
-viewModule : ( Int, Module Part ) -> Html Msg
-viewModule ( index, m ) =
+
+viewModule : Submarine -> ( Int, Module Part ) -> Html Msg
+viewModule submarine ( index, m ) =
     Html.div [ Html.Attributes.class "module" ]
         (m
             |> Dict.toList
-            |> List.map viewPart
+            |> List.map (viewPart submarine)
         )
         |> Html.map (ModuleMsg index)
 
@@ -660,7 +687,7 @@ view model =
         -- )
         (model.modules
             |> Engine.Module.modulesToList
-            |> List.map viewModule
+            |> List.map (viewModule model.submarine)
         )
 
 
