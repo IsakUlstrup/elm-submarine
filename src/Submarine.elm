@@ -116,6 +116,7 @@ tickControls dt submarine =
                     submarine.rudderInput - submarine.rudder
             in
             submarine.rudder + (diff * dt * 0.0015) |> clamp -1 1
+        , rudderInput = 0
     }
 
 
