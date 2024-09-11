@@ -54,8 +54,6 @@ init _ =
 
 type Msg
     = Tick Float
-    | KeyDown String
-    | KeyUp String
     | SteeringInput Float
     | ThrottleInput Float
 
@@ -74,16 +72,6 @@ update msg model =
                         |> Submarine.applyRotation
                         |> Submarine.friction
               }
-            , Cmd.none
-            )
-
-        KeyDown _ ->
-            ( model
-            , Cmd.none
-            )
-
-        KeyUp _ ->
-            ( model
             , Cmd.none
             )
 
@@ -296,10 +284,43 @@ view model =
 -- DECODERS
 
 
-keyDecoder : (String -> msg) -> Decoder msg
-keyDecoder msg =
-    Decode.map msg
-        (Decode.field "key" Decode.string)
+keyDecoder : Bool -> Decoder Msg
+keyDecoder pressed =
+    Decode.field "key" Decode.string
+        |> Decode.andThen
+            (\key ->
+                case key of
+                    "w" ->
+                        if pressed then
+                            Decode.succeed <| ThrottleInput 1
+
+                        else
+                            Decode.succeed <| ThrottleInput 0
+
+                    "s" ->
+                        if pressed then
+                            Decode.succeed <| ThrottleInput -1
+
+                        else
+                            Decode.succeed <| ThrottleInput 0
+
+                    "a" ->
+                        if pressed then
+                            Decode.succeed <| SteeringInput -1
+
+                        else
+                            Decode.succeed <| SteeringInput 0
+
+                    "d" ->
+                        if pressed then
+                            Decode.succeed <| SteeringInput 1
+
+                        else
+                            Decode.succeed <| SteeringInput 0
+
+                    _ ->
+                        Decode.fail "unknown key"
+            )
 
 
 
@@ -309,8 +330,8 @@ keyDecoder msg =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ Browser.Events.onKeyDown (keyDecoder KeyDown)
-        , Browser.Events.onKeyUp (keyDecoder KeyUp)
+        [ Browser.Events.onKeyDown (keyDecoder True)
+        , Browser.Events.onKeyUp (keyDecoder False)
         , Browser.Events.onAnimationFrameDelta (min 50 >> Tick)
         ]
 
