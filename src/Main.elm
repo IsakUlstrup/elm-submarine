@@ -102,14 +102,14 @@ update msg model =
 viewVector : List (Svg.Attribute msg) -> Vector2 -> Svg msg
 viewVector attrs vector =
     let
-        ( x2, y2 ) =
-            ( vector.x * 50, vector.y * 50 )
+        to =
+            Vector2.scale 50 vector
     in
     Svg.line
         ([ Svg.Attributes.x1 "0"
          , Svg.Attributes.y1 "0"
-         , Svg.Attributes.x2 (String.fromFloat x2)
-         , Svg.Attributes.y2 (String.fromFloat y2)
+         , Svg.Attributes.x2 (String.fromFloat to.x)
+         , Svg.Attributes.y2 (String.fromFloat to.y)
          ]
             ++ attrs
         )
@@ -182,15 +182,38 @@ viewGrid pos =
         )
 
 
+prettyFloat : Float -> String
+prettyFloat n =
+    case n |> String.fromFloat |> String.split "." of
+        [ x ] ->
+            x
+
+        x :: xs ->
+            x ++ "." ++ (xs |> String.concat |> String.left 2)
+
+        [] ->
+            "E: " ++ String.fromFloat n
+
+
 viewPhysicsDebug : Submarine -> Html msg
 viewPhysicsDebug submarine =
-    Svg.svg
-        [ Svg.Attributes.viewBox "-250 -250 500 500"
-        , Svg.Attributes.class "movement-debug"
-        , Svg.Attributes.transform "matrix(1 0 0 -1 5 5)"
-        ]
-        [ viewGrid submarine.position
-        , viewSubmarine submarine
+    Html.div []
+        [ Svg.svg
+            [ Svg.Attributes.viewBox "-250 -250 500 500"
+            , Svg.Attributes.class "movement-debug"
+
+            -- flip svg y axis so we can use cartesian coordinates
+            , Svg.Attributes.transform "matrix(1 0 0 -1 0 0)"
+            ]
+            [ viewGrid submarine.position
+            , viewSubmarine submarine
+            ]
+        , Html.div []
+            [ Html.p []
+                [ Html.text "Velocity: "
+                , Html.text (submarine |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
+                ]
+            ]
         ]
 
 
