@@ -1,4 +1,16 @@
-module Submarine exposing (Submarine, SubmarineState, applyRotation, applyThrust, controlsUpdate, friction, new, rudderForce, setRudderInput, setThrottleInput, stepParticle, tickControls)
+module Submarine exposing
+    ( Submarine
+    , SubmarineState
+    , applyRotation
+    , applyThrust
+    , controlsUpdate
+    , friction
+    , new
+    , rudderForce
+    , setRudderInput
+    , setThrottleInput
+    , stepParticle
+    )
 
 import Engine.Particle as Particle exposing (Particle)
 import Engine.Vector2 as Vector2 exposing (Vector2)
@@ -30,12 +42,14 @@ applyThrust submarine =
 rudderForce : Submarine -> Submarine
 rudderForce submarine =
     let
+        force : Vector2
         force =
             Vector2.orthogonal submarine.orientation
                 |> Vector2.scale submarine.state.rudder
                 |> Vector2.scale (Particle.velocity submarine |> Vector2.magnitude |> min 1)
                 |> Vector2.scale 0.01
 
+        frictionForce : Vector2
         frictionForce =
             force
                 |> Vector2.scale
@@ -110,8 +124,6 @@ tickControls dt submarine =
             submarine.rudder
                 + ((submarine.rudderInput - submarine.rudder) * dt * 0.0015)
                 |> clamp -1 1
-
-        -- , rudderInput = 0
     }
 
 

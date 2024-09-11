@@ -1,4 +1,4 @@
-module Main exposing (Model, Msg, main)
+module Main exposing (Model, Module, Msg, main)
 
 import Browser
 import Browser.Events
@@ -7,6 +7,7 @@ import Engine.Vector2 as Vector2 exposing (Vector2)
 import Html exposing (Html, main_)
 import Html.Attributes
 import Html.Events
+import Html.Lazy
 import Json.Decode as Decode exposing (Decoder)
 import Submarine exposing (Submarine)
 import Svg exposing (Svg)
@@ -150,6 +151,7 @@ viewSubmarine submarine =
 viewGrid : Vector2 -> Svg msg
 viewGrid pos =
     let
+        verticalLine : Int -> Svg msg
         verticalLine x =
             Svg.line
                 [ Svg.Attributes.x1 (String.fromInt x)
@@ -159,6 +161,7 @@ viewGrid pos =
                 ]
                 []
 
+        horizontalLine : Int -> Svg msg
         horizontalLine y =
             Svg.line
                 [ Svg.Attributes.x1 "-500"
@@ -168,6 +171,7 @@ viewGrid pos =
                 ]
                 []
 
+        spacing : Int
         spacing =
             200
     in
@@ -267,6 +271,7 @@ viewThrottleButtons =
 view : Model -> Html Msg
 view model =
     let
+        viewModule : Module -> Html Msg
         viewModule m =
             Html.div [ Html.Attributes.class "module" ]
                 [ case m of
@@ -280,7 +285,7 @@ view model =
                         viewInputState model.submarine
 
                     PhysicsDebug ->
-                        viewPhysicsDebug model.submarine
+                        Html.Lazy.lazy viewPhysicsDebug model.submarine
                 ]
     in
     main_ [ Html.Attributes.id "app" ]
