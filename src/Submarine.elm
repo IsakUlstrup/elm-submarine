@@ -110,15 +110,16 @@ tickControls dt submarine =
             submarine.rudder
                 + ((submarine.rudderInput - submarine.rudder) * dt * 0.0015)
                 |> clamp -1 1
-        , rudderInput = 0
+
+        -- , rudderInput = 0
     }
 
 
 setThrottleInput : Float -> SubmarineState -> SubmarineState
 setThrottleInput throttle submarine =
-    { submarine | throttleInput = submarine.throttleInput + throttle |> clamp -1 1 }
+    { submarine | throttleInput = throttle |> clamp -1 1 }
 
 
 setRudderInput : Float -> SubmarineState -> SubmarineState
 setRudderInput r submarine =
-    { submarine | rudderInput = submarine.rudderInput + r |> clamp -1 1 }
+    { submarine | rudderInput = r |> clamp -1 1 }

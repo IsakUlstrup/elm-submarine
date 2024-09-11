@@ -1,10 +1,7 @@
 module Main exposing (Model, Msg, main)
 
-import Array
 import Browser
 import Browser.Events
-import Dict
-import Engine.Module exposing (Module, Modules, Signal(..))
 import Engine.Particle as Particle
 import Engine.Vector2 as Vector2 exposing (Vector2)
 import Html exposing (Html, main_)
@@ -17,186 +14,35 @@ import Svg.Attributes
 
 
 
--- PART
+-- MODULE
 
 
-type Part
-    = Button Bool
-    | ToggleButton Bool
-    | Slider Float
-    | SteeringController String Float
-    | KeyboardToggle String Bool
-    | MovementDisplay
-
-
-buttonSteeringModule : Module Part
-buttonSteeringModule =
-    Engine.Module.newModule
-        [ ( "SteeringSlider", Slider 0 )
-        , ( "Steering", SteeringController "SteeringSlider" 0 )
-        , ( "Button", Button False )
-        ]
-
-
-keyboardInputModule : Module Part
-keyboardInputModule =
-    Engine.Module.newModule
-        [ ( "Left", KeyboardToggle "a" False )
-        , ( "Right", KeyboardToggle "d" False )
-        , ( "Toggle", ToggleButton False )
-        ]
-
-
-movementDisplayModule : Module Part
-movementDisplayModule =
-    Engine.Module.newModule
-        [ ( "Display", MovementDisplay )
-        ]
+type Module
+    = SteeringButtons
+    | ThrottleButtons
+    | InputState
+    | PhysicsDebug
 
 
 
--- -- MODULE
--- type Module
---     = InputButtons ButtonState
---     | KeyboardInput ButtonState
---     | ControlsState
---     | StateDump
---     | Compass
---     | Movement
--- type alias ButtonState =
---     { left : Bool
---     , forwards : Bool
---     , right : Bool
---     }
--- type Direction
---     = Left
---     | Forwards
---     | Right
--- updateButtonState : (ButtonState -> ButtonState) -> Module -> Module
--- updateButtonState f mod =
---     case mod of
---         InputButtons state ->
---             InputButtons (f state)
---         _ ->
---             mod
--- updateKeyboardInputState : (ButtonState -> ButtonState) -> Module -> Module
--- updateKeyboardInputState f mod =
---     case mod of
---         KeyboardInput state ->
---             KeyboardInput (f state)
---         _ ->
---             mod
--- handleKeyPress : String -> Bool -> ButtonState -> ButtonState
--- handleKeyPress key pressed state =
---     case key of
---         "a" ->
---             setDirectionPressed Left pressed state
---         "d" ->
---             setDirectionPressed Right pressed state
---         "w" ->
---             setDirectionPressed Forwards pressed state
---         _ ->
---             state
--- setDirectionPressed : Direction -> Bool -> ButtonState -> ButtonState
--- setDirectionPressed direction pressed state =
---     case direction of
---         Left ->
---             { state | left = pressed }
---         Forwards ->
---             { state | forwards = pressed }
---         Right ->
---             { state | right = pressed }
 -- MODEL
 
 
 type alias Model =
     { submarine : Submarine
-
-    -- , slots : Array (Maybe Module)
-    , modules : Modules Part
+    , modules : List Module
     }
-
-
-
--- updateSlot : Int -> (Module -> Module) -> Model -> Model
--- updateSlot index f model =
---     let
---         slot =
---             Array.get index model.slots
---                 |> Maybe.andThen
---                     (Maybe.map f)
---     in
---     { model | slots = Array.set index slot model.slots }
--- updateSlots : (Module -> Module) -> Model -> Model
--- updateSlots f model =
---     { model | slots = Array.map (Maybe.map f) model.slots }
--- applyModules : Model -> Model
--- applyModules model =
---     let
---         modules =
---             model.slots |> Array.toList |> List.filterMap identity
---         applyModule m s =
---             case m of
---                 InputButtons state ->
---                     if state.left then
---                         s |> Particle.updateState (Submarine.setRudderInput -1)
---                     else if state.right then
---                         s |> Particle.updateState (Submarine.setRudderInput 1)
---                     else if state.forwards then
---                         s |> Particle.updateState (Submarine.setThrottleInput 1)
---                     else
---                         s
---                             |> Particle.updateState (Submarine.setThrottleInput 0)
---                             |> Particle.updateState (Submarine.setRudderInput 0)
---                 KeyboardInput state ->
---                     if state.left then
---                         s |> Particle.updateState (Submarine.setRudderInput -1)
---                     else if state.right then
---                         s |> Particle.updateState (Submarine.setRudderInput 1)
---                     else if state.forwards then
---                         s |> Particle.updateState (Submarine.setThrottleInput 1)
---                     else
---                         s
---                             |> Particle.updateState (Submarine.setThrottleInput 0)
---                             |> Particle.updateState (Submarine.setRudderInput 0)
---                 _ ->
---                     s
---     in
---     { model | submarine = List.foldl applyModule model.submarine modules }
-
-
-applyPart : Part -> Submarine -> Submarine
-applyPart part submarine =
-    case part of
-        SteeringController _ value ->
-            submarine
-                |> Particle.updateState (Submarine.setRudderInput value)
-
-        _ ->
-            submarine
-
-
-applyModule : Module Part -> Submarine -> Submarine
-applyModule m submarine =
-    List.foldl applyPart submarine (Dict.toList m |> List.map Tuple.second)
-
-
-applyModules : Modules Part -> Submarine -> Submarine
-applyModules modules submarine =
-    List.foldl applyModule submarine (Array.toList modules)
 
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
         (Particle.new Submarine.new Vector2.zero 100)
-        -- (Array.repeat 8 Nothing)
-        (Engine.Module.empty
-            |> Engine.Module.addModule buttonSteeringModule
-            |> Engine.Module.addModule movementDisplayModule
-            |> Engine.Module.addModule buttonSteeringModule
-            |> Engine.Module.addModule keyboardInputModule
-        )
+        [ SteeringButtons
+        , ThrottleButtons
+        , InputState
+        , PhysicsDebug
+        ]
     , Cmd.none
     )
 
@@ -209,7 +55,8 @@ type Msg
     = Tick Float
     | KeyDown String
     | KeyUp String
-    | ModuleMsg Int Engine.Module.ModuleMsg
+    | SteeringInput Float
+    | ThrottleInput Float
 
 
 
@@ -224,7 +71,6 @@ update msg model =
             ( { model
                 | submarine =
                     model.submarine
-                        |> applyModules model.modules
                         |> Submarine.stepParticle dt
                         |> Submarine.controlsUpdate dt
                         |> Submarine.applyThrust
@@ -235,85 +81,29 @@ update msg model =
             , Cmd.none
             )
 
-        KeyDown key ->
-            ( { model | modules = Engine.Module.updateModules updatePart { name = key, signal = Bool True } model.modules }
+        KeyDown _ ->
+            ( model
             , Cmd.none
             )
 
-        KeyUp key ->
-            ( { model | modules = Engine.Module.updateModules updatePart { name = key, signal = Bool False } model.modules }
+        KeyUp _ ->
+            ( model
             , Cmd.none
             )
 
-        ModuleMsg index moduleMsg ->
-            ( { model | modules = Engine.Module.updateModuleAtIndex index updatePart moduleMsg model.modules }
+        SteeringInput input ->
+            ( { model | submarine = Particle.updateState (Submarine.setRudderInput input) model.submarine }
+            , Cmd.none
+            )
+
+        ThrottleInput input ->
+            ( { model | submarine = Particle.updateState (Submarine.setThrottleInput input) model.submarine }
             , Cmd.none
             )
 
 
-updatePart : Engine.Module.ModuleMsg -> String -> Part -> Part
-updatePart moduleMsg name part =
-    case ( part, moduleMsg.signal ) of
-        ( SteeringController inputSignal signal, Float value ) ->
-            (if moduleMsg.name == inputSignal then
-                value
 
-             else
-                signal
-            )
-                |> SteeringController inputSignal
-
-        ( Slider _, Float float ) ->
-            if name == moduleMsg.name then
-                Slider float
-
-            else
-                part
-
-        ( KeyboardToggle inputSignal _, Bool bool ) ->
-            if moduleMsg.name == inputSignal then
-                KeyboardToggle inputSignal bool
-
-            else
-                part
-
-        ( Button _, Bool bool ) ->
-            if name == moduleMsg.name then
-                Button bool
-
-            else
-                part
-
-        ( ToggleButton _, Bool bool ) ->
-            if name == moduleMsg.name then
-                ToggleButton bool
-
-            else
-                part
-
-        _ ->
-            part
-
-
-
--- ClickedAddModule index mod ->
---     ( { model | slots = Array.set index (Just mod) model.slots }
---     , Cmd.none
---     )
--- ClickedInputButton index direction pressed ->
---     ( updateSlot index (updateButtonState <| setDirectionPressed direction pressed) model
---     , Cmd.none
---     )
 -- VIEW
--- prettyFloat : Float -> String
--- prettyFloat f =
---     case f |> String.fromFloat |> String.split "." of
---         [ x ] ->
---             x
---         x :: xs ->
---             x ++ "." ++ String.left 1 (String.concat xs)
---         [] ->
---             "Error"
 
 
 viewVector : List (Svg.Attribute msg) -> Vector2 -> Svg msg
@@ -406,8 +196,8 @@ viewGrid pos =
         )
 
 
-viewMovementDebug : Submarine -> Html msg
-viewMovementDebug submarine =
+viewPhysicsDebug : Submarine -> Html msg
+viewPhysicsDebug submarine =
     Svg.svg
         [ Svg.Attributes.viewBox "-250 -250 500 500"
         , Svg.Attributes.class "movement-debug"
@@ -417,278 +207,89 @@ viewMovementDebug submarine =
         ]
 
 
-
--- viewInputButtons : Int -> ButtonState -> Html Msg
--- viewInputButtons index state =
---     let
---         pointerMsg direction pressed =
---             Decode.succeed (ClickedInputButton index direction pressed)
---     in
---     Html.div [ Svg.Attributes.class "module" ]
---         [ Html.button
---             [ Html.Events.on "pointerdown" (pointerMsg Left True)
---             , Html.Events.on "pointerup" (pointerMsg Left False)
---             , Html.Events.on "pointerleave" (pointerMsg Left False)
---             , Html.Attributes.classList [ ( "down", state.left ) ]
---             ]
---             [ Html.text "Port" ]
---         , Html.button
---             [ Html.Events.on "pointerdown" (pointerMsg Forwards True)
---             , Html.Events.on "pointerup" (pointerMsg Forwards False)
---             , Html.Events.on "pointerleave" (pointerMsg Forwards False)
---             , Html.Attributes.classList [ ( "down", state.forwards ) ]
---             ]
---             [ Html.text "Forwards" ]
---         , Html.button
---             [ Html.Events.on "pointerdown" (pointerMsg Right True)
---             , Html.Events.on "pointerup" (pointerMsg Right False)
---             , Html.Events.on "pointerleave" (pointerMsg Right False)
---             , Html.Attributes.classList [ ( "down", state.right ) ]
---             ]
---             [ Html.text "Starboard" ]
---         ]
--- viewKeyboardInput : ButtonState -> Html Msg
--- viewKeyboardInput state =
---     Html.div [ Svg.Attributes.class "module" ]
---         [ Html.button
---             [ Html.Attributes.classList [ ( "down", state.left ) ]
---             ]
---             [ Html.text "Port" ]
---         , Html.button
---             [ Html.Attributes.classList [ ( "down", state.forwards ) ]
---             ]
---             [ Html.text "Forwards" ]
---         , Html.button
---             [ Html.Attributes.classList [ ( "down", state.right ) ]
---             ]
---             [ Html.text "Starboard" ]
---         ]
--- viewControlsState : Submarine -> Html Msg
--- viewControlsState submarine =
---     Html.div [ Html.Attributes.class "module" ]
---         [ Html.h1 [] [ Html.text "Rudder" ]
---         , Html.div
---             [ Html.Attributes.style "display" "flex"
---             , Html.Attributes.style "width" "100%"
---             , Html.Attributes.style "gap" "0.5rem"
---             ]
---             [ Html.meter
---                 [ Html.Attributes.value (String.fromFloat (submarine.state.rudder |> min 0 |> abs))
---                 , Html.Attributes.style "transform" "rotate(180deg)"
---                 ]
---                 []
---             , Html.meter
---                 [ Html.Attributes.value (String.fromFloat submarine.state.rudder)
---                 ]
---                 []
---             ]
---         , Html.h1 [] [ Html.text "Throttle" ]
---         , Html.meter
---             [ Html.Attributes.value (String.fromFloat submarine.state.throttle)
---             ]
---             []
---         ]
--- viewCompass : Submarine -> Html Msg
--- viewCompass submarine =
---     let
---         ( x2, y2 ) =
---             ( submarine.orientation.x * 35, submarine.orientation.y * 35 )
---     in
---     Html.div [ Svg.Attributes.class "module" ]
---         [ Svg.svg
---             [ Svg.Attributes.viewBox "-50 -50 100 100"
---             ]
---             [ Svg.circle [ Svg.Attributes.r "50", Svg.Attributes.fill "white" ] []
---             , Svg.g
---                 [ Svg.Attributes.dominantBaseline "central"
---                 , Svg.Attributes.textAnchor "middle"
---                 , Svg.Attributes.fontSize "0.5rem"
---                 ]
---                 [ Svg.text_
---                     [ Svg.Attributes.y "-40" ]
---                     [ Svg.text "N" ]
---                 , Svg.text_
---                     [ Svg.Attributes.y "40" ]
---                     [ Svg.text "S" ]
---                 , Svg.text_
---                     [ Svg.Attributes.x "-40" ]
---                     [ Svg.text "W" ]
---                 , Svg.text_
---                     [ Svg.Attributes.x "40" ]
---                     [ Svg.text "E" ]
---                 ]
---             , Svg.line
---                 [ Svg.Attributes.x1 "0"
---                 , Svg.Attributes.y1 "0"
---                 , Svg.Attributes.x2 (String.fromFloat x2)
---                 , Svg.Attributes.y2 (String.fromFloat y2)
---                 , Svg.Attributes.stroke "red"
---                 , Svg.Attributes.strokeWidth "2"
---                 , Svg.Attributes.strokeLinecap "round"
---                 ]
---                 []
---             ]
---         ]
--- viewStateDump : Submarine -> Html msg
--- viewStateDump submarine =
---     Html.div [ Html.Attributes.class "module" ]
---         [ Html.p []
---             [ Html.text "Position: "
---             , Html.text (prettyFloat submarine.position.x)
---             , Html.text ", "
---             , Html.text (prettyFloat submarine.position.y)
---             ]
---         , Html.p []
---             [ Html.text "Rotation (deg): "
---             , Html.text (prettyFloat (Vector2.angleDegrees submarine.orientation))
---             ]
---         , Html.p []
---             [ Html.text "Rotation (rad): "
---             , Html.text (prettyFloat (Vector2.angleRadian submarine.orientation))
---             ]
---         , Html.p []
---             [ Html.text "Velocity: "
---             , Html.text (submarine |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
---             ]
---         , Html.p []
---             [ Html.text "Throttle: "
---             , Html.text (submarine.state.throttle |> prettyFloat)
---             ]
---         , Html.p []
---             [ Html.text "Rudder: "
---             , Html.text (submarine.state.rudder |> prettyFloat)
---             ]
---         ]
--- viewMovement : Submarine -> Html msg
--- viewMovement submarine =
---     Html.div [ Svg.Attributes.class "module", Svg.Attributes.class "fill" ]
---         [ Svg.Lazy.lazy viewMovementDebug submarine
---         ]
--- viewModule : Int -> Submarine -> Module -> Html Msg
--- viewModule index submarine m =
---     case m of
---         InputButtons state ->
---             viewInputButtons index state
---         KeyboardInput state ->
---             viewKeyboardInput state
---         ControlsState ->
---             viewControlsState submarine
---         StateDump ->
---             viewStateDump submarine
---         Compass ->
---             viewCompass submarine
---         Movement ->
---             viewMovement submarine
--- viewSlot : Submarine -> ( Int, Maybe Module ) -> Html Msg
--- viewSlot submarine ( index, slot ) =
---     Html.div [ Html.Attributes.class "slot" ]
---         (case slot of
---             Just m ->
---                 [ viewModule index submarine m ]
---             Nothing ->
---                 [ Html.button [ Html.Attributes.attribute "popovertarget" ("add-module-" ++ String.fromInt index) ] [ Html.text "Install module" ]
---                 , Html.div
---                     [ Html.Attributes.attribute "popover" ""
---                     , Html.Attributes.id ("add-module-" ++ String.fromInt index)
---                     , Html.Attributes.class "add-module-popup"
---                     ]
---                     [ Html.h3 [] [ Html.text ("Slot #" ++ String.fromInt index) ]
---                     , Html.ul [ Html.Attributes.class "modules" ]
---                         [ Html.li [ Html.Events.onClick (ClickedAddModule index (InputButtons { left = False, forwards = False, right = False })) ] [ Html.text "Input buttons" ]
---                         , Html.li [ Html.Events.onClick (ClickedAddModule index (KeyboardInput { left = False, forwards = False, right = False })) ] [ Html.text "Keyboard input" ]
---                         , Html.li [ Html.Events.onClick (ClickedAddModule index ControlsState) ] [ Html.text "Controls state" ]
---                         , Html.li [ Html.Events.onClick (ClickedAddModule index StateDump) ] [ Html.text "State view" ]
---                         , Html.li [ Html.Events.onClick (ClickedAddModule index Compass) ] [ Html.text "Compass" ]
---                         , Html.li [ Html.Events.onClick (ClickedAddModule index Movement) ] [ Html.text "Movement" ]
---                         ]
---                     ]
---                 ]
---         )
-
-
-viewPart : Submarine -> ( String, Part ) -> Html Engine.Module.ModuleMsg
-viewPart submarine ( name, part ) =
-    let
-        msg s =
-            { name = name
-            , signal = s
-            }
-    in
-    case part of
-        Button pressed ->
-            Html.button
-                [ Html.Events.onMouseDown
-                    (msg (Bool True))
-                , Html.Events.onMouseUp
-                    (msg (Bool False))
-                , Html.Attributes.classList [ ( "down", pressed ) ]
-                ]
-                [ Html.text name ]
-
-        ToggleButton pressed ->
-            Html.button
-                [ Html.Events.onMouseDown
-                    (msg (Bool (not pressed)))
-                , Html.Attributes.classList [ ( "down", pressed ) ]
-                ]
-                [ Html.text name ]
-
-        Slider value ->
-            Html.input
-                [ Html.Attributes.type_ "range"
-                , Html.Attributes.min "-1"
-                , Html.Attributes.max "1"
-                , Html.Attributes.step "0.1"
-                , Html.Attributes.value (String.fromFloat value)
-                , Html.Events.onInput
-                    (String.toFloat
-                        >> Maybe.withDefault value
-                        >> Float
-                        >> msg
-                    )
+viewInputState : Submarine -> Html msg
+viewInputState submarine =
+    Html.div []
+        [ Html.h1 [] [ Html.text "Rudder" ]
+        , Html.div []
+            [ Html.meter
+                [ Html.Attributes.value (String.fromFloat (submarine.state.rudder |> min 0 |> abs))
+                , Html.Attributes.style "transform" "rotate(180deg)"
                 ]
                 []
-
-        SteeringController _ value ->
-            Html.div [] [ Html.p [] [ Html.text "Rudder input" ], Html.text (value |> String.fromFloat) ]
-
-        KeyboardToggle _ pressed ->
-            Html.div []
-                [ Html.text name
-                , Html.text
-                    (if pressed then
-                        ": Down"
-
-                     else
-                        ": Up"
-                    )
+            , Html.meter
+                [ Html.Attributes.value (String.fromFloat submarine.state.rudder)
                 ]
+                []
+            ]
+        , Html.h1 [] [ Html.text "Throttle" ]
+        , Html.div []
+            [ Html.meter
+                [ Html.Attributes.value (String.fromFloat (submarine.state.throttle |> min 0 |> abs))
+                , Html.Attributes.style "transform" "rotate(180deg)"
+                ]
+                []
+            , Html.meter
+                [ Html.Attributes.value (String.fromFloat submarine.state.throttle)
+                ]
+                []
+            ]
+        ]
 
-        MovementDisplay ->
-            viewMovementDebug submarine
+
+viewSteeringButtons : Html Msg
+viewSteeringButtons =
+    Html.div []
+        [ Html.button
+            [ Html.Events.onMouseDown (SteeringInput -1)
+            , Html.Events.onMouseUp (SteeringInput 0)
+            ]
+            [ Html.text "Left" ]
+        , Html.button
+            [ Html.Events.onMouseDown (SteeringInput 1)
+            , Html.Events.onMouseUp (SteeringInput 0)
+            ]
+            [ Html.text "Right" ]
+        ]
 
 
-viewModule : Submarine -> ( Int, Module Part ) -> Html Msg
-viewModule submarine ( index, m ) =
-    Html.div [ Html.Attributes.class "module" ]
-        (m
-            |> Dict.toList
-            |> List.map (viewPart submarine)
-        )
-        |> Html.map (ModuleMsg index)
+viewThrottleButtons : Html Msg
+viewThrottleButtons =
+    Html.div []
+        [ Html.button
+            [ Html.Events.onMouseDown (ThrottleInput 1)
+            , Html.Events.onMouseUp (ThrottleInput 0)
+            ]
+            [ Html.text "Forward" ]
+        , Html.button
+            [ Html.Events.onMouseDown (ThrottleInput -1)
+            , Html.Events.onMouseUp (ThrottleInput 0)
+            ]
+            [ Html.text "Reverse" ]
+        ]
 
 
 view : Model -> Html Msg
 view model =
+    let
+        viewModule m =
+            Html.div [ Html.Attributes.class "module" ]
+                [ case m of
+                    SteeringButtons ->
+                        viewSteeringButtons
+
+                    ThrottleButtons ->
+                        viewThrottleButtons
+
+                    InputState ->
+                        viewInputState model.submarine
+
+                    PhysicsDebug ->
+                        viewPhysicsDebug model.submarine
+                ]
+    in
     main_ [ Html.Attributes.id "app" ]
-        -- (model.slots
-        --     |> Array.toIndexedList
-        --     |> List.map (viewSlot model.submarine)
-        -- )
-        (model.modules
-            |> Engine.Module.modulesToList
-            |> List.map (viewModule model.submarine)
-        )
+        (List.map viewModule model.modules)
 
 
 
