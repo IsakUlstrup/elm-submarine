@@ -59,11 +59,6 @@ type Msg
     | ThrottleInput Float
 
 
-
--- | ClickedAddModule Int Module
--- | ClickedInputButton Int Direction Bool
-
-
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
