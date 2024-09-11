@@ -119,29 +119,19 @@ viewVector attrs vector =
 viewSubmarine : Submarine -> Svg msg
 viewSubmarine submarine =
     Svg.g
-        []
-        [ Svg.circle
-            [ Svg.Attributes.r (String.fromFloat submarine.radius)
-            , Svg.Attributes.fill "white"
-            ]
-            []
-        , Svg.g
-            [ Svg.Attributes.strokeWidth "7"
-            , Svg.Attributes.strokeLinecap "round"
-            ]
-            [ viewVector
-                [ Svg.Attributes.stroke "red" ]
-                submarine.orientation
-            , viewVector
-                [ Svg.Attributes.stroke "green" ]
-                (Vector2.orthogonal submarine.orientation |> Vector2.scale -submarine.state.rudder)
-            , viewVector
-                [ Svg.Attributes.stroke "orange" ]
-                (Particle.velocity submarine)
-            , viewVector
-                [ Svg.Attributes.stroke "cyan" ]
-                (submarine.orientation |> Vector2.scale -1 |> Vector2.rotate -submarine.state.rudder)
-            ]
+        [ Svg.Attributes.strokeWidth "7"
+        , Svg.Attributes.stroke "white"
+        , Svg.Attributes.strokeLinecap "round"
+        ]
+        [ viewVector
+            [ Svg.Attributes.stroke "red" ]
+            (submarine |> Particle.forwards)
+        , viewVector
+            [ Svg.Attributes.stroke "orange" ]
+            (Particle.velocity submarine)
+        , viewVector
+            [ Svg.Attributes.stroke "cyan" ]
+            (submarine |> Particle.forwards |> Vector2.scale -1 |> Vector2.rotate submarine.state.rudder)
         ]
 
 
@@ -197,6 +187,7 @@ viewPhysicsDebug submarine =
     Svg.svg
         [ Svg.Attributes.viewBox "-250 -250 500 500"
         , Svg.Attributes.class "movement-debug"
+        , Svg.Attributes.transform "matrix(1 0 0 -1 5 5)"
         ]
         [ viewGrid submarine.position
         , viewSubmarine submarine

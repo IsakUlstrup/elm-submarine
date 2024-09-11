@@ -33,7 +33,8 @@ applyThrust submarine =
 
         force : Vector2
         force =
-            submarine.orientation
+            submarine
+                |> Particle.forwards
                 |> Vector2.scale (submarine.state.throttle * enginePower)
     in
     Particle.applyForce force submarine
@@ -41,24 +42,26 @@ applyThrust submarine =
 
 rudderForce : Submarine -> Submarine
 rudderForce submarine =
-    let
-        force : Vector2
-        force =
-            Vector2.orthogonal submarine.orientation
-                |> Vector2.scale submarine.state.rudder
-                |> Vector2.scale (Particle.velocity submarine |> Vector2.magnitude |> min 1)
-                |> Vector2.scale 0.01
-
-        frictionForce : Vector2
-        frictionForce =
-            force
-                |> Vector2.scale
-                    ((Particle.velocity submarine |> Vector2.magnitude) - Vector2.magnitude force)
-                |> Vector2.scale -1
-    in
+    -- let
+    --     force : Vector2
+    --     force =
+    --         Vector2.orthogonal submarine.orientation
+    --             |> Vector2.scale submarine.state.rudder
+    --             |> Vector2.scale (Particle.velocity submarine |> Vector2.magnitude |> min 1)
+    --             |> Vector2.scale 0.01
+    --     frictionForce : Vector2
+    --     frictionForce =
+    --         force
+    --             |> Vector2.scale
+    --                 ((Particle.velocity submarine |> Vector2.magnitude) - Vector2.magnitude force)
+    --             |> Vector2.scale -1
+    -- in
     submarine
-        |> Particle.applyForce force
-        |> Particle.applyForce frictionForce
+
+
+
+-- |> Particle.applyForce force
+-- |> Particle.applyForce frictionForce
 
 
 applyRotation : Submarine -> Submarine

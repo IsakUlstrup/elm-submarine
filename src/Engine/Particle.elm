@@ -2,6 +2,7 @@ module Engine.Particle exposing
     ( Particle
     , applyForce
     , applyRotationalForce
+    , forwards
     , new
     , setMass
     , setPosition
@@ -19,7 +20,7 @@ type alias Particle a =
     { position : Vector2
     , oldPosition : Vector2
     , acceleration : Vector2
-    , orientation : Vector2
+    , orientation : Float
     , rotationVelocity : Float
     , rotationAcceleration : Float
     , mass : Float
@@ -32,7 +33,7 @@ type alias Particle a =
 -}
 new : a -> Vector2 -> Float -> Particle a
 new state position mass =
-    Particle position position Vector2.zero Vector2.east 0 0 mass 50 state
+    Particle position position Vector2.zero 0 0 0 mass 50 state
 
 
 updateState : (a -> a) -> Particle a -> Particle a
@@ -57,7 +58,7 @@ applyForce force particle =
 applyRotationalForce : Float -> Particle a -> Particle a
 applyRotationalForce force particle =
     if particle.mass /= 0 then
-        { particle | rotationAcceleration = particle.rotationAcceleration + (force / particle.mass) }
+        { particle | rotationAcceleration = (force / particle.mass) + particle.rotationAcceleration }
 
     else
         particle
@@ -80,6 +81,12 @@ setMass mass particle =
     { particle | mass = max 0 mass }
 
 
+forwards : Particle a -> Vector2
+forwards particle =
+    Vector2.new (sin particle.orientation) (cos particle.orientation)
+        |> Vector2.normalize
+
+
 {-| Step forwards using Verlet integration
 -}
 step : Float -> Particle a -> Particle a
@@ -92,6 +99,6 @@ step dt particle =
         , oldPosition = particle.position
         , acceleration = Vector2.zero
         , rotationVelocity = particle.rotationVelocity + (particle.rotationAcceleration * (dt ^ 2))
-        , orientation = Vector2.rotate particle.rotationVelocity particle.orientation
+        , orientation = particle.orientation + particle.rotationVelocity
         , rotationAcceleration = 0
     }

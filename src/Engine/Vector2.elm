@@ -10,6 +10,8 @@ module Engine.Vector2 exposing
     , magnitude
     , mapX
     , mapY
+    , new
+    , normalize
     , orthogonal
     , rotate
     , scale
