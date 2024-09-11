@@ -2,6 +2,7 @@ module Main exposing (Model, Module, Msg, main)
 
 import Browser
 import Browser.Events
+import Dict exposing (Dict)
 import Engine.Particle as Particle
 import Engine.Vector2 as Vector2 exposing (Vector2)
 import Html exposing (Html, main_)
@@ -32,6 +33,7 @@ type Module
 type alias Model =
     { submarine : Submarine
     , modules : List Module
+    , keybinds : Dict String ( Msg, Msg )
     }
 
 
@@ -44,6 +46,13 @@ init _ =
         , InputState
         , PhysicsDebug
         ]
+        (Dict.fromList
+            [ ( "w", ( ThrottleInput 1, ThrottleInput 0 ) )
+            , ( "s", ( ThrottleInput -1, ThrottleInput 0 ) )
+            , ( "a", ( SteeringInput -1, SteeringInput 0 ) )
+            , ( "d", ( SteeringInput 1, SteeringInput 0 ) )
+            ]
+        )
     , Cmd.none
     )
 
@@ -284,42 +293,21 @@ view model =
 -- DECODERS
 
 
-keyDecoder : Bool -> Decoder Msg
-keyDecoder pressed =
+keyDecoder : Dict String ( Msg, Msg ) -> Bool -> Decoder Msg
+keyDecoder binds pressed =
     Decode.field "key" Decode.string
         |> Decode.andThen
             (\key ->
-                case key of
-                    "w" ->
+                case Dict.get key binds of
+                    Just ( downMsg, upMsg ) ->
                         if pressed then
-                            Decode.succeed <| ThrottleInput 1
+                            Decode.succeed <| downMsg
 
                         else
-                            Decode.succeed <| ThrottleInput 0
+                            Decode.succeed <| upMsg
 
-                    "s" ->
-                        if pressed then
-                            Decode.succeed <| ThrottleInput -1
-
-                        else
-                            Decode.succeed <| ThrottleInput 0
-
-                    "a" ->
-                        if pressed then
-                            Decode.succeed <| SteeringInput -1
-
-                        else
-                            Decode.succeed <| SteeringInput 0
-
-                    "d" ->
-                        if pressed then
-                            Decode.succeed <| SteeringInput 1
-
-                        else
-                            Decode.succeed <| SteeringInput 0
-
-                    _ ->
-                        Decode.fail "unknown key"
+                    Nothing ->
+                        Decode.fail "unknown key bind"
             )
 
 
@@ -328,10 +316,10 @@ keyDecoder pressed =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions model =
     Sub.batch
-        [ Browser.Events.onKeyDown (keyDecoder True)
-        , Browser.Events.onKeyUp (keyDecoder False)
+        [ Browser.Events.onKeyDown (keyDecoder model.keybinds True)
+        , Browser.Events.onKeyUp (keyDecoder model.keybinds False)
         , Browser.Events.onAnimationFrameDelta (min 50 >> Tick)
         ]
 
