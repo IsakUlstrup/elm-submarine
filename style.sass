@@ -76,7 +76,7 @@ $module-top: -0.25rem
     100%
         top: $module-top
 
-.module
+#app>div
     border-radius: 1rem
     border-bottom: 1px solid rgba(255, 255, 255, 0.6)
     width: 100%
@@ -85,7 +85,6 @@ $module-top: -0.25rem
     background: lighten($beige, 5)
     color: $grey
     fill: $grey
-    aspect-ratio: 1/1
 
     animation: slide-down 300ms cubic-bezier(0.34, 1.56, 0.64, 1)
 
@@ -95,11 +94,7 @@ $module-top: -0.25rem
     flex-direction: column
     justify-content: center
     align-items: center
-    flex-wrap: wrap
     gap: 1rem
-
-    &.fill
-        padding: 0
 
     &::after
         content: ""
@@ -112,6 +107,10 @@ $module-top: -0.25rem
         bottom: $module-top
         z-index: -1
         box-shadow: 0rem 0.1rem 0.3rem rgba(0, 0, 0, 0.2)
+
+.button-group
+    display: flex
+    gap: 1rem
 
 .movement-debug
     background: lighten(#4294a8, 20)

@@ -45,7 +45,6 @@ rudderRotation controls particle =
 type Module
     = SteeringButtons
     | ThrottleButtons
-    | InputState
     | PhysicsDebug
 
 
@@ -71,7 +70,6 @@ init _ =
         )
         [ SteeringButtons
         , ThrottleButtons
-        , InputState
         , PhysicsDebug
         ]
         (Controls.new 0.001 0.01)
@@ -237,11 +235,11 @@ viewPhysicsDebug controls particle =
                 , Svg.Attributes.strokeLinecap "round"
                 ]
                 [ viewVector
-                    [ Svg.Attributes.stroke "red" ]
-                    (particle |> Particle.forwards)
-                , viewVector
                     [ Svg.Attributes.stroke "orange" ]
                     (Particle.velocity particle)
+                , viewVector
+                    [ Svg.Attributes.stroke "red" ]
+                    (particle |> Particle.forwards)
                 , viewVector
                     [ Svg.Attributes.stroke "cyan" ]
                     (particle |> Particle.forwards |> Vector2.scale -1 |> Vector2.rotate controls.rudder)
@@ -256,49 +254,22 @@ viewPhysicsDebug controls particle =
         ]
 
 
-viewControls : Controls -> Html msg
-viewControls controls =
-    Html.div []
-        [ Html.h1 [] [ Html.text "Rudder" ]
-        , Html.div []
-            [ Html.meter
-                [ Html.Attributes.value (String.fromFloat (controls.rudder |> min 0 |> abs))
-                , Html.Attributes.style "transform" "rotate(180deg)"
-                ]
-                []
-            , Html.meter
-                [ Html.Attributes.value (String.fromFloat controls.rudder)
-                ]
-                []
-            ]
-        , Html.h1 [] [ Html.text "Throttle" ]
-        , Html.div []
-            [ Html.meter
-                [ Html.Attributes.value (String.fromFloat (controls.throttle |> min 0 |> abs))
-                , Html.Attributes.style "transform" "rotate(180deg)"
-                ]
-                []
-            , Html.meter
-                [ Html.Attributes.value (String.fromFloat controls.throttle)
-                ]
-                []
-            ]
-        ]
-
-
 viewSteeringButtons : Controls -> Html Msg
 viewSteeringButtons controls =
     Html.div []
-        [ Html.button
-            [ Html.Events.onMouseDown (SteeringInput -1)
-            , Html.Events.onMouseUp (SteeringInput 0)
+        [ Html.h1 [] [ Html.text "Rudder" ]
+        , Html.div [ Html.Attributes.class "button-group" ]
+            [ Html.button
+                [ Html.Events.onMouseDown (SteeringInput -1)
+                , Html.Events.onMouseUp (SteeringInput 0)
+                ]
+                [ Html.text "Left" ]
+            , Html.button
+                [ Html.Events.onMouseDown (SteeringInput 1)
+                , Html.Events.onMouseUp (SteeringInput 0)
+                ]
+                [ Html.text "Right" ]
             ]
-            [ Html.text "Left" ]
-        , Html.button
-            [ Html.Events.onMouseDown (SteeringInput 1)
-            , Html.Events.onMouseUp (SteeringInput 0)
-            ]
-            [ Html.text "Right" ]
         , Html.input
             [ Html.Attributes.type_ "range"
             , Html.Attributes.min "-1"
@@ -318,19 +289,38 @@ viewSteeringButtons controls =
         ]
 
 
-viewThrottleButtons : Html Msg
-viewThrottleButtons =
+viewThrottleButtons : Controls -> Html Msg
+viewThrottleButtons controls =
     Html.div []
-        [ Html.button
-            [ Html.Events.onMouseDown (ThrottleInput 1)
+        [ Html.h1 [] [ Html.text "Throttle" ]
+        , Html.div [ Html.Attributes.class "button-group" ]
+            [ Html.button
+                [ Html.Events.onMouseDown (ThrottleInput -1)
+                , Html.Events.onMouseUp (ThrottleInput 0)
+                ]
+                [ Html.text "Backwards" ]
+            , Html.button
+                [ Html.Events.onMouseDown (ThrottleInput 1)
+                , Html.Events.onMouseUp (ThrottleInput 0)
+                ]
+                [ Html.text "Forwards" ]
+            ]
+        , Html.input
+            [ Html.Attributes.type_ "range"
+            , Html.Attributes.min "-1"
+            , Html.Attributes.max "1"
+            , Html.Attributes.step "0.1"
+            , Html.Attributes.value (String.fromFloat controls.throttleInput)
+            , Html.Events.onInput (String.toFloat >> Maybe.withDefault controls.throttleInput >> ThrottleInput)
             , Html.Events.onMouseUp (ThrottleInput 0)
             ]
-            [ Html.text "Forward" ]
-        , Html.button
-            [ Html.Events.onMouseDown (ThrottleInput -1)
-            , Html.Events.onMouseUp (ThrottleInput 0)
+            []
+        , Html.meter
+            [ Html.Attributes.min "-1"
+            , Html.Attributes.max "1"
+            , Html.Attributes.value (String.fromFloat controls.throttle)
             ]
-            [ Html.text "Reverse" ]
+            []
         ]
 
 
@@ -339,20 +329,15 @@ view model =
     let
         viewModule : Module -> Html Msg
         viewModule m =
-            Html.div [ Html.Attributes.class "module" ]
-                [ case m of
-                    SteeringButtons ->
-                        viewSteeringButtons model.controls
+            case m of
+                SteeringButtons ->
+                    viewSteeringButtons model.controls
 
-                    ThrottleButtons ->
-                        viewThrottleButtons
+                ThrottleButtons ->
+                    viewThrottleButtons model.controls
 
-                    InputState ->
-                        viewControls model.controls
-
-                    PhysicsDebug ->
-                        Html.Lazy.lazy2 viewPhysicsDebug model.controls model.particle
-                ]
+                PhysicsDebug ->
+                    Html.Lazy.lazy2 viewPhysicsDebug model.controls model.particle
     in
     main_ [ Html.Attributes.id "app" ]
         (List.map viewModule model.modules)
