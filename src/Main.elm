@@ -349,7 +349,7 @@ subscriptions model =
     Sub.batch
         [ Browser.Events.onKeyDown (keyDecoder model.keybinds True)
         , Browser.Events.onKeyUp (keyDecoder model.keybinds False)
-        , Browser.Events.onAnimationFrameDelta (min 30 >> Tick)
+        , Browser.Events.onAnimationFrameDelta Tick
         ]
 
 
