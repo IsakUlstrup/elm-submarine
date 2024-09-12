@@ -8,7 +8,6 @@ module Engine.Particle exposing
     , setOrientation
     , setPosition
     , step
-    , updateState
     , velocity
     )
 
@@ -17,7 +16,7 @@ import Engine.Vector2 as Vector2 exposing (Vector2)
 
 {-| A particle meant to be used with Verlet integration
 -}
-type alias Particle a =
+type alias Particle =
     { position : Vector2
     , oldPosition : Vector2
     , acceleration : Vector2
@@ -26,23 +25,17 @@ type alias Particle a =
     , rotationAcceleration : Float
     , mass : Float
     , radius : Float
-    , state : a
     }
 
 
 {-| Particle constructor
 -}
-new : a -> Vector2 -> Float -> Particle a
-new state position mass =
-    Particle position position Vector2.zero 0 0 0 mass 50 state
+new : Vector2 -> Float -> Particle
+new position mass =
+    Particle position position Vector2.zero 0 0 0 mass 50
 
 
-updateState : (a -> a) -> Particle a -> Particle a
-updateState f particle =
-    { particle | state = f particle.state }
-
-
-applyForce : Vector2 -> Particle a -> Particle a
+applyForce : Vector2 -> Particle -> Particle
 applyForce force particle =
     if particle.mass /= 0 then
         { particle
@@ -56,7 +49,7 @@ applyForce force particle =
         particle
 
 
-applyRotationalForce : Float -> Particle a -> Particle a
+applyRotationalForce : Float -> Particle -> Particle
 applyRotationalForce force particle =
     if particle.mass /= 0 then
         { particle | rotationAcceleration = (force / particle.mass) + particle.rotationAcceleration }
@@ -67,27 +60,27 @@ applyRotationalForce force particle =
 
 {-| Derive velocity vector based on old position
 -}
-velocity : Particle a -> Vector2
+velocity : Particle -> Vector2
 velocity particle =
     Vector2.subtract particle.oldPosition particle.position
 
 
-setPosition : Vector2 -> Particle a -> Particle a
+setPosition : Vector2 -> Particle -> Particle
 setPosition position particle =
     { particle | position = position, oldPosition = Vector2.subtract (velocity particle) position }
 
 
-setOrientation : Float -> Particle a -> Particle a
+setOrientation : Float -> Particle -> Particle
 setOrientation radian particle =
     { particle | orientation = radian }
 
 
-setMass : Float -> Particle a -> Particle a
+setMass : Float -> Particle -> Particle
 setMass mass particle =
     { particle | mass = max 0 mass }
 
 
-forwards : Particle a -> Vector2
+forwards : Particle -> Vector2
 forwards particle =
     Vector2.new (sin particle.orientation) (cos particle.orientation)
         |> Vector2.normalize
@@ -95,7 +88,7 @@ forwards particle =
 
 {-| Step forwards using Verlet integration
 -}
-step : Float -> Particle a -> Particle a
+step : Float -> Particle -> Particle
 step dt particle =
     { particle
         | position =

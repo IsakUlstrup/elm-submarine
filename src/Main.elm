@@ -2,15 +2,15 @@ module Main exposing (Model, Module, Msg, main)
 
 import Browser
 import Browser.Events
+import Controls exposing (Controls)
 import Dict exposing (Dict)
-import Engine.Particle as Particle
+import Engine.Particle as Particle exposing (Particle)
 import Engine.Vector2 as Vector2 exposing (Vector2)
 import Html exposing (Html, main_)
 import Html.Attributes
 import Html.Events
 import Html.Lazy
 import Json.Decode as Decode exposing (Decoder)
-import Submarine exposing (Submarine)
 import Svg exposing (Svg)
 import Svg.Attributes
 
@@ -31,8 +31,9 @@ type Module
 
 
 type alias Model =
-    { submarine : Submarine
+    { particle : Particle
     , modules : List Module
+    , controls : Controls
     , keybinds : Dict String ( Msg, Msg )
     }
 
@@ -40,15 +41,16 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
-        (Particle.new Submarine.new Vector2.zero 100
+        (Particle.new Vector2.zero 100
             |> Particle.setOrientation (pi / 2)
-            |> Particle.applyForce (Vector2.new 0 2)
+            |> Particle.applyForce (Vector2.new 0 20)
         )
         [ SteeringButtons
         , ThrottleButtons
         , InputState
         , PhysicsDebug
         ]
+        (Controls.new 0.001 0.01)
         (Dict.fromList
             [ ( "w", ( ThrottleInput 1, ThrottleInput 0 ) )
             , ( "s", ( ThrottleInput -1, ThrottleInput 0 ) )
@@ -75,9 +77,9 @@ update msg model =
     case msg of
         Tick dt ->
             ( { model
-                | submarine =
-                    model.submarine
-                        |> Submarine.stepParticle dt
+                | particle =
+                    model.particle
+                        |> Particle.step dt
 
                 -- |> Submarine.controlsUpdate dt
                 -- |> Submarine.applyThrust
@@ -89,12 +91,12 @@ update msg model =
             )
 
         SteeringInput input ->
-            ( { model | submarine = Particle.updateState (Submarine.setRudderInput input) model.submarine }
+            ( { model | controls = Controls.setRudderInput input model.controls }
             , Cmd.none
             )
 
         ThrottleInput input ->
-            ( { model | submarine = Particle.updateState (Submarine.setThrottleInput input) model.submarine }
+            ( { model | controls = Controls.setThrottleInput input model.controls }
             , Cmd.none
             )
 
@@ -118,25 +120,6 @@ viewVector attrs vector =
             ++ attrs
         )
         []
-
-
-viewSubmarine : Submarine -> Svg msg
-viewSubmarine submarine =
-    Svg.g
-        [ Svg.Attributes.strokeWidth "7"
-        , Svg.Attributes.stroke "white"
-        , Svg.Attributes.strokeLinecap "round"
-        ]
-        [ viewVector
-            [ Svg.Attributes.stroke "red" ]
-            (submarine |> Particle.forwards)
-        , viewVector
-            [ Svg.Attributes.stroke "orange" ]
-            (Particle.velocity submarine)
-        , viewVector
-            [ Svg.Attributes.stroke "cyan" ]
-            (submarine |> Particle.forwards |> Vector2.scale -1 |> Vector2.rotate submarine.state.rudder)
-        ]
 
 
 viewGrid : Vector2 -> Svg msg
@@ -199,8 +182,8 @@ prettyFloat n =
             "E: " ++ String.fromFloat n
 
 
-viewPhysicsDebug : Submarine -> Html msg
-viewPhysicsDebug submarine =
+viewPhysicsDebug : Controls -> Particle -> Html msg
+viewPhysicsDebug controls particle =
     Html.div []
         [ Svg.svg
             [ Svg.Attributes.viewBox "-250 -250 500 500"
@@ -209,42 +192,56 @@ viewPhysicsDebug submarine =
             -- flip svg y axis so we can use cartesian coordinates
             , Svg.Attributes.transform "matrix(1 0 0 -1 0 0)"
             ]
-            [ viewGrid submarine.position
-            , viewSubmarine submarine
+            [ viewGrid particle.position
+            , Svg.g
+                [ Svg.Attributes.strokeWidth "7"
+                , Svg.Attributes.stroke "white"
+                , Svg.Attributes.strokeLinecap "round"
+                ]
+                [ viewVector
+                    [ Svg.Attributes.stroke "red" ]
+                    (particle |> Particle.forwards)
+                , viewVector
+                    [ Svg.Attributes.stroke "orange" ]
+                    (Particle.velocity particle)
+                , viewVector
+                    [ Svg.Attributes.stroke "cyan" ]
+                    (particle |> Particle.forwards |> Vector2.scale -1 |> Vector2.rotate controls.rudder)
+                ]
             ]
         , Html.div []
             [ Html.p []
                 [ Html.text "Velocity: "
-                , Html.text (submarine |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
+                , Html.text (particle |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
                 ]
             ]
         ]
 
 
-viewInputState : Submarine -> Html msg
-viewInputState submarine =
+viewControls : Controls -> Html msg
+viewControls controls =
     Html.div []
         [ Html.h1 [] [ Html.text "Rudder" ]
         , Html.div []
             [ Html.meter
-                [ Html.Attributes.value (String.fromFloat (submarine.state.rudder |> min 0 |> abs))
+                [ Html.Attributes.value (String.fromFloat (controls.rudder |> min 0 |> abs))
                 , Html.Attributes.style "transform" "rotate(180deg)"
                 ]
                 []
             , Html.meter
-                [ Html.Attributes.value (String.fromFloat submarine.state.rudder)
+                [ Html.Attributes.value (String.fromFloat controls.rudder)
                 ]
                 []
             ]
         , Html.h1 [] [ Html.text "Throttle" ]
         , Html.div []
             [ Html.meter
-                [ Html.Attributes.value (String.fromFloat (submarine.state.throttle |> min 0 |> abs))
+                [ Html.Attributes.value (String.fromFloat (controls.throttle |> min 0 |> abs))
                 , Html.Attributes.style "transform" "rotate(180deg)"
                 ]
                 []
             , Html.meter
-                [ Html.Attributes.value (String.fromFloat submarine.state.throttle)
+                [ Html.Attributes.value (String.fromFloat controls.throttle)
                 ]
                 []
             ]
@@ -297,10 +294,10 @@ view model =
                         viewThrottleButtons
 
                     InputState ->
-                        viewInputState model.submarine
+                        viewControls model.controls
 
                     PhysicsDebug ->
-                        Html.Lazy.lazy viewPhysicsDebug model.submarine
+                        Html.Lazy.lazy2 viewPhysicsDebug model.controls model.particle
                 ]
     in
     main_ [ Html.Attributes.id "app" ]
@@ -338,7 +335,7 @@ subscriptions model =
     Sub.batch
         [ Browser.Events.onKeyDown (keyDecoder model.keybinds True)
         , Browser.Events.onKeyUp (keyDecoder model.keybinds False)
-        , Browser.Events.onAnimationFrameDelta (min 50 >> Tick)
+        , Browser.Events.onAnimationFrameDelta (min 30 >> Tick)
         ]
 
 
