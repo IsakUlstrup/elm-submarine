@@ -283,6 +283,7 @@ viewSteeringButtons controls =
             , Html.Attributes.step "0.1"
             , Html.Attributes.value (String.fromFloat controls.rudderInput)
             , Html.Events.onInput (String.toFloat >> Maybe.withDefault controls.rudderInput >> SteeringInput)
+            , Html.Events.onMouseUp (SteeringInput 0)
             ]
             []
         ]
