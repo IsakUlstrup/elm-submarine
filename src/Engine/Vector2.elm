@@ -120,7 +120,7 @@ rotate theta vector =
 
 angleRadian : Vector2 -> Float
 angleRadian { x, y } =
-    atan2 x y - (pi / 2)
+    atan2 x y
 
 
 angleDegrees : Vector2 -> Float

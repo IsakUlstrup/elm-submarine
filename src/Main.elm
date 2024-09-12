@@ -17,6 +17,31 @@ import Timing exposing (Timing)
 
 
 
+-- FORCES
+
+
+rudderRotation : Controls -> Particle -> Particle
+rudderRotation controls particle =
+    let
+        velocityAngle =
+            Vector2.angleRadian velocity
+
+        velocity =
+            Particle.velocity particle
+
+        rudderAngle =
+            particle.orientation - controls.rudder
+
+        angleDelta =
+            velocityAngle
+                - rudderAngle
+    in
+    particle
+        |> Particle.applyRotationalForce (angleDelta * controls.rudderSize * Vector2.magnitude velocity)
+        |> Particle.applyRotationalForce (particle.rotationVelocity * -0.05)
+
+
+
 -- MODULE
 
 
@@ -75,10 +100,11 @@ type Msg
     | ThrottleInput Float
 
 
-physicsUpdate : Float -> Particle -> Particle
-physicsUpdate dt particle =
+physicsUpdate : Controls -> Float -> Particle -> Particle
+physicsUpdate controls dt particle =
     particle
         |> Particle.step dt
+        |> rudderRotation controls
 
 
 
@@ -95,7 +121,7 @@ update msg model =
         Tick dt ->
             let
                 ( newTiming, newParticle ) =
-                    Timing.fixedUpdate physicsUpdate dt ( model.timing, model.particle )
+                    Timing.fixedUpdate (physicsUpdate model.controls) dt ( model.timing, model.particle )
             in
             ( { model
                 | particle = newParticle
