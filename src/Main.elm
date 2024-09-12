@@ -13,6 +13,7 @@ import Html.Lazy
 import Json.Decode as Decode exposing (Decoder)
 import Svg exposing (Svg)
 import Svg.Attributes
+import Timing exposing (Timing)
 
 
 
@@ -34,6 +35,7 @@ type alias Model =
     { particle : Particle
     , modules : List Module
     , controls : Controls
+    , timing : Timing
     , keybinds : Dict String ( Msg, Msg )
     }
 
@@ -43,7 +45,7 @@ init _ =
     ( Model
         (Particle.new Vector2.zero 100
             |> Particle.setOrientation (pi / 2)
-            |> Particle.applyForce (Vector2.new 0 20)
+            |> Particle.applyForce (Vector2.new 0 1)
         )
         [ SteeringButtons
         , ThrottleButtons
@@ -51,6 +53,7 @@ init _ =
         , PhysicsDebug
         ]
         (Controls.new 0.001 0.01)
+        0
         (Dict.fromList
             [ ( "w", ( ThrottleInput 1, ThrottleInput 0 ) )
             , ( "s", ( ThrottleInput -1, ThrottleInput 0 ) )
@@ -72,20 +75,31 @@ type Msg
     | ThrottleInput Float
 
 
+physicsUpdate : Float -> Particle -> Particle
+physicsUpdate dt particle =
+    particle
+        |> Particle.step dt
+
+
+
+-- |> Submarine.controlsUpdate dt
+-- |> Submarine.applyThrust
+-- |> Submarine.rudderForce
+-- |> Submarine.applyRotation
+-- |> Submarine.friction
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Tick dt ->
+            let
+                ( newTiming, newParticle ) =
+                    Timing.fixedUpdate physicsUpdate dt ( model.timing, model.particle )
+            in
             ( { model
-                | particle =
-                    model.particle
-                        |> Particle.step dt
-
-                -- |> Submarine.controlsUpdate dt
-                -- |> Submarine.applyThrust
-                -- |> Submarine.rudderForce
-                -- |> Submarine.applyRotation
-                -- |> Submarine.friction
+                | particle = newParticle
+                , timing = newTiming
               }
             , Cmd.none
             )
