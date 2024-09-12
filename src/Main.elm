@@ -286,6 +286,12 @@ viewSteeringButtons controls =
             , Html.Events.onMouseUp (SteeringInput 0)
             ]
             []
+        , Html.meter
+            [ Html.Attributes.min "-1"
+            , Html.Attributes.max "1"
+            , Html.Attributes.value (String.fromFloat controls.rudder)
+            ]
+            []
         ]
 
 
