@@ -3,7 +3,7 @@ module Controls exposing
     , new
     , setRudderInput
     , setThrottleInput
-    , tickControls
+    , tick
     )
 
 
@@ -22,8 +22,8 @@ new rudderSize enginePower =
     Controls 0 0 0 0 rudderSize enginePower
 
 
-tickControls : Float -> Controls -> Controls
-tickControls dt submarine =
+tick : Float -> Controls -> Controls
+tick dt submarine =
     { submarine
         | throttle =
             submarine.throttle

@@ -100,6 +100,7 @@ update msg model =
             ( { model
                 | particle = newParticle
                 , timing = newTiming
+                , controls = Controls.tick dt model.controls
               }
             , Cmd.none
             )
