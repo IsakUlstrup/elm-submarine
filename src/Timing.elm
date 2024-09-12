@@ -24,17 +24,3 @@ fixedUpdate f dt ( timing, state ) =
         ( timing + dt
         , state
         )
-
-
-
--- updateModel : (a -> a) -> a -> Timing -> ( Timing, a )
--- updateModel f state timing =
---     if timing.timeAccum >= stepTime then
---         let
---             newState =
---                 f state
---         in
---         { timing | timeAccum = timing.timeAccum - stepTime }
---             |> updateModel f newState
---     else
---         ( timing, state )
