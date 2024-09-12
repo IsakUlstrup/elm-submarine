@@ -22,6 +22,15 @@ new rudderSize enginePower =
     Controls 0 0 0 0 rudderSize enginePower
 
 
+stop : Float -> Float
+stop n =
+    if abs n < 0.01 then
+        0
+
+    else
+        n
+
+
 tick : Float -> Controls -> Controls
 tick dt submarine =
     { submarine
@@ -29,10 +38,12 @@ tick dt submarine =
             submarine.throttle
                 + ((submarine.throttleInput - submarine.throttle) * dt * 0.002)
                 |> clamp -1 1
+                |> stop
         , rudder =
             submarine.rudder
                 + ((submarine.rudderInput - submarine.rudder) * dt * 0.0015)
                 |> clamp -1 1
+                |> stop
     }
 
 
