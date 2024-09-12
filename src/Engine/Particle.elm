@@ -5,6 +5,7 @@ module Engine.Particle exposing
     , forwards
     , new
     , setMass
+    , setOrientation
     , setPosition
     , step
     , updateState
@@ -74,6 +75,11 @@ velocity particle =
 setPosition : Vector2 -> Particle a -> Particle a
 setPosition position particle =
     { particle | position = position, oldPosition = Vector2.subtract (velocity particle) position }
+
+
+setOrientation : Float -> Particle a -> Particle a
+setOrientation radian particle =
+    { particle | orientation = radian }
 
 
 setMass : Float -> Particle a -> Particle a

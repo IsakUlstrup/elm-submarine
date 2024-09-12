@@ -40,7 +40,10 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
-        (Particle.new Submarine.new Vector2.zero 100)
+        (Particle.new Submarine.new Vector2.zero 100
+            |> Particle.setOrientation (pi / 2)
+            |> Particle.applyForce (Vector2.new 0 2)
+        )
         [ SteeringButtons
         , ThrottleButtons
         , InputState
@@ -75,11 +78,12 @@ update msg model =
                 | submarine =
                     model.submarine
                         |> Submarine.stepParticle dt
-                        |> Submarine.controlsUpdate dt
-                        |> Submarine.applyThrust
-                        |> Submarine.rudderForce
-                        |> Submarine.applyRotation
-                        |> Submarine.friction
+
+                -- |> Submarine.controlsUpdate dt
+                -- |> Submarine.applyThrust
+                -- |> Submarine.rudderForce
+                -- |> Submarine.applyRotation
+                -- |> Submarine.friction
               }
             , Cmd.none
             )
