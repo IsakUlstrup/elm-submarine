@@ -263,8 +263,8 @@ viewControls controls =
         ]
 
 
-viewSteeringButtons : Html Msg
-viewSteeringButtons =
+viewSteeringButtons : Controls -> Html Msg
+viewSteeringButtons controls =
     Html.div []
         [ Html.button
             [ Html.Events.onMouseDown (SteeringInput -1)
@@ -276,6 +276,15 @@ viewSteeringButtons =
             , Html.Events.onMouseUp (SteeringInput 0)
             ]
             [ Html.text "Right" ]
+        , Html.input
+            [ Html.Attributes.type_ "range"
+            , Html.Attributes.min "-1"
+            , Html.Attributes.max "1"
+            , Html.Attributes.step "0.1"
+            , Html.Attributes.value (String.fromFloat controls.rudderInput)
+            , Html.Events.onInput (String.toFloat >> Maybe.withDefault controls.rudderInput >> SteeringInput)
+            ]
+            []
         ]
 
 
@@ -303,7 +312,7 @@ view model =
             Html.div [ Html.Attributes.class "module" ]
                 [ case m of
                     SteeringButtons ->
-                        viewSteeringButtons
+                        viewSteeringButtons model.controls
 
                     ThrottleButtons ->
                         viewThrottleButtons
