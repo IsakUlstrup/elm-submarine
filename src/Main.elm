@@ -23,9 +23,6 @@ import Timing exposing (Timing)
 rudderRotation : Controls -> Particle -> Particle
 rudderRotation controls particle =
     let
-        velocityAngle =
-            Vector2.angleRadian velocity
-
         velocity =
             Particle.velocity particle
 
@@ -33,11 +30,11 @@ rudderRotation controls particle =
             particle.orientation - controls.rudder
 
         angleDelta =
-            velocityAngle
-                - rudderAngle
+            Vector2.angleRadian velocity - rudderAngle
     in
     particle
         |> Particle.applyRotationalForce (angleDelta * controls.rudderSize * Vector2.magnitude velocity)
+        -- crude dampening, this should not use magic numbers
         |> Particle.applyRotationalForce (particle.rotationVelocity * -0.05)
 
 
