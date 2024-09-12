@@ -26,7 +26,9 @@ button
     border-radius: 0.5rem
     transition: all 200ms
 
-    &.down
+    &:hover
+        background-color: lighten($mint, 5)
+    &:active
         transform: scale(0.9)
         background-color: darken($mint, 5)
 
