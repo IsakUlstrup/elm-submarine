@@ -33,8 +33,21 @@ rotationForces controls particle =
             Vector2.angleRadian velocity - rudderAngle
     in
     particle
-        |> Particle.applyRotationalForce (angleDelta * Vector2.magnitude velocity)
+        |> Particle.applyRotationalForce (angleDelta * Vector2.magnitude velocity * 0.05)
         |> Particle.applyRotationalForce -(particle.rotationVelocity * 10)
+        |> Particle.applyForce (Particle.forwards particle |> Vector2.scale (Vector2.magnitude velocity * 0.1))
+        |> Particle.applyForce (velocity |> Vector2.scale -0.1)
+
+
+thrustForce : Controls -> Particle -> Particle
+thrustForce controls particle =
+    let
+        force =
+            particle
+                |> Particle.forwards
+                |> Vector2.scale (controls.enginePower * controls.throttle)
+    in
+    Particle.applyForce force particle
 
 
 
@@ -64,14 +77,14 @@ init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
         (Particle.new Vector2.zero 2000
-            |> Particle.setOrientation (pi / 2)
-            |> Particle.applyForce (Vector2.new 0 30)
+         -- |> Particle.setOrientation (pi / 2)
+         -- |> Particle.applyForce (Vector2.new 0 30)
         )
         [ SteeringButtons
         , ThrottleButtons
         , PhysicsDebug
         ]
-        (Controls.new 1 0.01)
+        (Controls.new 1 0.1)
         0
         (Dict.fromList
             [ ( "w", ( ThrottleInput 1, ThrottleInput 0 ) )
@@ -99,6 +112,7 @@ physicsUpdate controls dt particle =
     particle
         |> Particle.step dt
         |> rotationForces controls
+        |> thrustForce controls
 
 
 
