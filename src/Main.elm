@@ -33,8 +33,8 @@ rotationForces controls particle =
             Vector2.angleRadian velocity - rudderAngle
     in
     particle
-        |> Particle.applyRotationalForce (angleDelta * controls.rudderSize * Vector2.magnitude velocity)
-        |> Particle.applyRotationalForce -(particle.rotationVelocity * controls.rudderSize)
+        |> Particle.applyRotationalForce (angleDelta * Vector2.magnitude velocity)
+        |> Particle.applyRotationalForce -(particle.rotationVelocity * 10)
 
 
 
@@ -65,7 +65,7 @@ init _ =
     ( Model
         (Particle.new Vector2.zero 2000
             |> Particle.setOrientation (pi / 2)
-            |> Particle.applyForce (Vector2.new 0 3)
+            |> Particle.applyForce (Vector2.new 0 30)
         )
         [ SteeringButtons
         , ThrottleButtons
