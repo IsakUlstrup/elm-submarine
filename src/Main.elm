@@ -20,8 +20,8 @@ import Timing exposing (Timing)
 -- FORCES
 
 
-rudderRotation : Controls -> Particle -> Particle
-rudderRotation controls particle =
+rotationForces : Controls -> Particle -> Particle
+rotationForces controls particle =
     let
         velocity =
             Particle.velocity particle
@@ -34,8 +34,7 @@ rudderRotation controls particle =
     in
     particle
         |> Particle.applyRotationalForce (angleDelta * controls.rudderSize * Vector2.magnitude velocity)
-        -- crude dampening, this should not use magic numbers
-        |> Particle.applyRotationalForce (particle.rotationVelocity * -0.05)
+        |> Particle.applyRotationalForce -(particle.rotationVelocity * controls.rudderSize)
 
 
 
@@ -64,15 +63,15 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
-        (Particle.new Vector2.zero 100
+        (Particle.new Vector2.zero 2000
             |> Particle.setOrientation (pi / 2)
-            |> Particle.applyForce (Vector2.new 0 1)
+            |> Particle.applyForce (Vector2.new 0 3)
         )
         [ SteeringButtons
         , ThrottleButtons
         , PhysicsDebug
         ]
-        (Controls.new 0.001 0.01)
+        (Controls.new 1 0.01)
         0
         (Dict.fromList
             [ ( "w", ( ThrottleInput 1, ThrottleInput 0 ) )
@@ -99,7 +98,7 @@ physicsUpdate : Controls -> Float -> Particle -> Particle
 physicsUpdate controls dt particle =
     particle
         |> Particle.step dt
-        |> rudderRotation controls
+        |> rotationForces controls
 
 
 
