@@ -58,6 +58,7 @@ type Module
     = SteeringButtons
     | ThrottleButtons
     | PhysicsDebug
+    | StateDump
 
 
 
@@ -83,6 +84,7 @@ init _ =
         [ SteeringButtons
         , ThrottleButtons
         , PhysicsDebug
+        , StateDump
         ]
         (Controls.new 1 0.1)
         0
@@ -222,7 +224,7 @@ prettyFloat : Float -> String
 prettyFloat n =
     case n |> String.fromFloat |> String.split "." of
         [ x ] ->
-            x
+            x ++ ".00"
 
         x :: xs ->
             x ++ "." ++ (xs |> String.concat |> String.left 2)
@@ -337,6 +339,14 @@ viewThrottleButtons controls =
         ]
 
 
+viewStateDump : Particle -> Html msg
+viewStateDump particle =
+    Html.div []
+        [ Html.text "Angle (rad): "
+        , Html.text (prettyFloat particle.orientation)
+        ]
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -351,6 +361,9 @@ view model =
 
                 PhysicsDebug ->
                     Html.Lazy.lazy2 viewPhysicsDebug model.controls model.particle
+
+                StateDump ->
+                    viewStateDump model.particle
     in
     main_ [ Html.Attributes.id "app" ]
         (List.map viewModule model.modules)
