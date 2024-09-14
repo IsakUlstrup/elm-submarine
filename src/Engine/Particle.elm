@@ -82,8 +82,8 @@ setMass mass particle =
 
 forwards : Particle -> Vector2
 forwards particle =
-    Vector2.new (sin particle.orientation) (cos particle.orientation)
-        |> Vector2.normalize
+    particle.orientation
+        |> Vector2.fromRadian
 
 
 {-| Step forwards using Verlet integration

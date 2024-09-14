@@ -7,6 +7,7 @@ module Engine.Vector2 exposing
     , distance
     , divide
     , east
+    , fromRadian
     , magnitude
     , mapX
     , mapY
@@ -74,12 +75,15 @@ divide value vector =
         zero
 
     else
-        { vector | x = vector.x / value, y = vector.y / value }
+        { vector
+            | x = vector.x / value
+            , y = vector.y / value
+        }
 
 
 magnitude : Vector2 -> Float
 magnitude vector =
-    sqrt (vector.x ^ 2 + vector.y ^ 2)
+    sqrt ((vector.x * vector.x) + (vector.y * vector.y))
 
 
 {-| Normalize a vector, a normalized vector is one where length/manitude is 1
@@ -100,7 +104,8 @@ distance v1 v2 =
 -}
 direction : Vector2 -> Vector2 -> Vector2
 direction origin target =
-    Vector2 (target.x - origin.x) (target.y - origin.y) |> normalize
+    Vector2 (target.x - origin.x) (target.y - origin.y)
+        |> normalize
 
 
 {-| Construct new vector with both components set to 0
@@ -113,19 +118,24 @@ zero =
 rotate : Float -> Vector2 -> Vector2
 rotate theta vector =
     { vector
-        | x = (vector.x * cos theta) - (vector.y * sin theta)
-        , y = (vector.x * sin theta) + (vector.y * cos theta)
+        | x = vector.x * cos theta - vector.y * sin theta
+        , y = vector.x * sin theta + vector.y * cos theta
     }
+
+
+fromRadian : Float -> Vector2
+fromRadian radian =
+    new (cos radian) (sin radian)
 
 
 angleRadian : Vector2 -> Float
 angleRadian { x, y } =
-    atan2 x y
+    atan2 y x
 
 
 angleDegrees : Vector2 -> Float
 angleDegrees vector =
-    (angleRadian vector * 180) / pi
+    (180 / pi) * angleRadian vector
 
 
 east : Vector2

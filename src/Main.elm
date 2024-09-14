@@ -257,7 +257,7 @@ viewPhysicsDebug controls particle =
                     (particle |> Particle.forwards)
                 , viewVector
                     [ Svg.Attributes.stroke "cyan" ]
-                    (particle |> Particle.forwards |> Vector2.scale -1 |> Vector2.rotate controls.rudder)
+                    (particle |> Particle.forwards |> Vector2.rotate controls.rudder)
                 ]
             ]
         , Html.div []
