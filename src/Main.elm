@@ -4,8 +4,9 @@ import Browser
 import Browser.Events
 import Controls exposing (Controls)
 import Dict exposing (Dict)
-import Engine.Particle as Particle exposing (Particle)
-import Engine.Vector2 as Vector2 exposing (Vector2)
+import Engine.Quaternion as Quaternion
+import Engine.Rigidbody as Rigidbody exposing (Rigidbody)
+import Engine.Vector as Vector exposing (Vector)
 import Html exposing (Html, main_)
 import Html.Attributes
 import Html.Events
@@ -18,36 +19,42 @@ import Timing exposing (Timing)
 
 
 -- FORCES
+-- rotationForces : Controls -> Particle -> Particle
+-- rotationForces controls particle =
+--     let
+--         velocity =
+--             Particle.velocity particle
+--         rudderAngle =
+--             particle.orientation - controls.rudder
+--         angleDelta =
+--             Vector2.angleRadian velocity - rudderAngle
+--     in
+--     particle
+--         |> Particle.applyRotationalForce (angleDelta * Vector2.magnitude velocity * 0.05)
+--         |> Particle.applyRotationalForce -(particle.rotationVelocity * 10)
+--         |> Particle.applyForce (Particle.forwards particle |> Vector2.scale (Vector2.magnitude velocity * 0.1))
+--         |> Particle.applyForce (velocity |> Vector2.scale -0.1)
+-- thrustForce : Controls -> Particle -> Particle
+-- thrustForce controls particle =
+--     let
+--         force =
+--             particle
+--                 |> Particle.forwards
+--                 |> Vector2.scale (controls.enginePower * controls.throttle)
+--     in
+--     Particle.applyForce force particle
 
 
-rotationForces : Controls -> Particle -> Particle
-rotationForces controls particle =
-    let
-        velocity =
-            Particle.velocity particle
-
-        rudderAngle =
-            particle.orientation - controls.rudder
-
-        angleDelta =
-            Vector2.angleRadian velocity - rudderAngle
-    in
-    particle
-        |> Particle.applyRotationalForce (angleDelta * Vector2.magnitude velocity * 0.05)
-        |> Particle.applyRotationalForce -(particle.rotationVelocity * 10)
-        |> Particle.applyForce (Particle.forwards particle |> Vector2.scale (Vector2.magnitude velocity * 0.1))
-        |> Particle.applyForce (velocity |> Vector2.scale -0.1)
+rotation : Float -> Controls -> Rigidbody -> Rigidbody
+rotation dt controls rigidbody =
+    rigidbody
+        |> Rigidbody.rotate (Rigidbody.zRotation (controls.rudder * dt * 0.1 |> degrees))
 
 
-thrustForce : Controls -> Particle -> Particle
-thrustForce controls particle =
-    let
-        force =
-            particle
-                |> Particle.forwards
-                |> Vector2.scale (controls.enginePower * controls.throttle)
-    in
-    Particle.applyForce force particle
+movement : Float -> Controls -> Rigidbody -> Rigidbody
+movement dt controls rigidbody =
+    rigidbody
+        |> Rigidbody.translateRelative (Vector.right |> Vector.scale (controls.throttle * controls.enginePower * dt))
 
 
 
@@ -66,7 +73,7 @@ type Module
 
 
 type alias Model =
-    { particle : Particle
+    { particle : Rigidbody
     , modules : List Module
     , controls : Controls
     , timing : Timing
@@ -77,7 +84,7 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     ( Model
-        (Particle.new Vector2.zero 2000
+        (Rigidbody.new Vector.zero 2000
          -- |> Particle.setOrientation (pi / 2)
          -- |> Particle.applyForce (Vector2.new 0 30)
         )
@@ -109,15 +116,17 @@ type Msg
     | ThrottleInput Float
 
 
-physicsUpdate : Controls -> Float -> Particle -> Particle
-physicsUpdate controls dt particle =
-    particle
-        |> Particle.step dt
-        |> rotationForces controls
-        |> thrustForce controls
+physicsUpdate : Controls -> Float -> Rigidbody -> Rigidbody
+physicsUpdate controls dt rigidbody =
+    rigidbody
+        |> Rigidbody.step dt
+        |> rotation dt controls
+        |> movement dt controls
 
 
 
+-- |> rotationForces controls
+-- |> thrustForce controls
 -- |> Submarine.controlsUpdate dt
 -- |> Submarine.applyThrust
 -- |> Submarine.rudderForce
@@ -156,11 +165,11 @@ update msg model =
 -- VIEW
 
 
-viewVector : List (Svg.Attribute msg) -> Vector2 -> Svg msg
+viewVector : List (Svg.Attribute msg) -> Vector -> Svg msg
 viewVector attrs vector =
     let
         to =
-            Vector2.scale 50 vector
+            Vector.scale 50 vector
     in
     Svg.line
         ([ Svg.Attributes.x1 "0"
@@ -173,7 +182,7 @@ viewVector attrs vector =
         []
 
 
-viewGrid : Vector2 -> Svg msg
+viewGrid : Vector -> Svg msg
 viewGrid pos =
     let
         verticalLine : Int -> Svg msg
@@ -233,8 +242,8 @@ prettyFloat n =
             "E: " ++ String.fromFloat n
 
 
-viewPhysicsDebug : Controls -> Particle -> Html msg
-viewPhysicsDebug controls particle =
+viewPhysicsDebug : Controls -> Rigidbody -> Html msg
+viewPhysicsDebug _ rigidbody =
     Html.div []
         [ Svg.svg
             [ Svg.Attributes.viewBox "-250 -250 500 500"
@@ -243,7 +252,7 @@ viewPhysicsDebug controls particle =
             -- flip svg y axis so we can use cartesian coordinates
             --, Svg.Attributes.transform "matrix(1 0 0 -1 0 0)"
             ]
-            [ viewGrid particle.position
+            [ viewGrid rigidbody.position
             , Svg.g
                 [ Svg.Attributes.strokeWidth "7"
                 , Svg.Attributes.stroke "white"
@@ -251,8 +260,8 @@ viewPhysicsDebug controls particle =
                 ]
                 [ viewVector
                     [ Svg.Attributes.stroke "orange" ]
-                    (Particle.velocity particle)
-                , Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat (particle.orientation * 180 / pi) ++ ")") ]
+                    (Rigidbody.velocity rigidbody)
+                , Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat (Quaternion.zToEuler rigidbody.orientation * 180 / pi) ++ ")") ]
                     [ Svg.line
                         [ Svg.Attributes.x1 "0"
                         , Svg.Attributes.y1 "0"
@@ -283,7 +292,7 @@ viewPhysicsDebug controls particle =
         , Html.div []
             [ Html.p []
                 [ Html.text "Velocity: "
-                , Html.text (particle |> Particle.velocity |> Vector2.magnitude |> prettyFloat)
+                , Html.text (rigidbody |> Rigidbody.velocity |> Vector.magnitude |> prettyFloat)
                 ]
             ]
         ]
@@ -359,11 +368,17 @@ viewThrottleButtons controls =
         ]
 
 
-viewStateDump : Particle -> Html msg
-viewStateDump particle =
+viewStateDump : Rigidbody -> Html msg
+viewStateDump rigidbody =
     Html.div []
-        [ Html.text "Angle (rad): "
-        , Html.text (prettyFloat particle.orientation)
+        [ Html.p []
+            [ Html.text "Z (rad): "
+            , Html.text (prettyFloat (Quaternion.zToEuler rigidbody.orientation))
+            ]
+        , Html.p []
+            [ Html.text "pos: "
+            , Html.text (Debug.toString rigidbody.position)
+            ]
         ]
 
 

@@ -87,7 +87,9 @@ setPosition position body =
 
 translate : Vector -> Rigidbody -> Rigidbody
 translate vector body =
-    { body | position = Vector.add body.position vector }
+    { body
+        | position = Vector.add body.position vector
+    }
 
 
 rotate : Quaternion -> Rigidbody -> Rigidbody
@@ -101,7 +103,10 @@ translateRelative vector body =
         rotatedVector =
             vectorMultiply body.orientation vector
     in
-    { body | position = Vector.add body.position rotatedVector }
+    { body
+        | position = Vector.add body.position rotatedVector
+        , oldPosition = Vector.add body.position rotatedVector
+    }
 
 
 setOrientation : Quaternion -> Rigidbody -> Rigidbody
