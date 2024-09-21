@@ -66,6 +66,7 @@ type Module
     | ThrottleButtons
     | PhysicsDebug
     | StateDump
+    | OrientationControls
 
 
 
@@ -92,6 +93,7 @@ init _ =
         , ThrottleButtons
         , PhysicsDebug
         , StateDump
+        , OrientationControls
         ]
         (Controls.new 1 0.1)
         0
@@ -114,6 +116,9 @@ type Msg
     = Tick Float
     | SteeringInput Float
     | ThrottleInput Float
+    | PitchInput Float
+    | YawInput Float
+    | RollInput Float
 
 
 physicsUpdate : Controls -> Float -> Rigidbody -> Rigidbody
@@ -157,6 +162,33 @@ update msg model =
 
         ThrottleInput input ->
             ( { model | controls = Controls.setThrottleInput input model.controls }
+            , Cmd.none
+            )
+
+        PitchInput input ->
+            ( { model
+                | particle =
+                    model.particle
+                        |> Rigidbody.rotate (Rigidbody.xRotation (degrees input))
+              }
+            , Cmd.none
+            )
+
+        YawInput input ->
+            ( { model
+                | particle =
+                    model.particle
+                        |> Rigidbody.rotate (Rigidbody.yRotation (degrees input))
+              }
+            , Cmd.none
+            )
+
+        RollInput input ->
+            ( { model
+                | particle =
+                    model.particle
+                        |> Rigidbody.rotate (Rigidbody.zRotation (degrees input))
+              }
             , Cmd.none
             )
 
@@ -397,6 +429,24 @@ viewStateDump rigidbody =
         ]
 
 
+viewOrientationControls : Html Msg
+viewOrientationControls =
+    Html.div []
+        [ Html.p []
+            [ Html.button [ Html.Events.onClick (PitchInput 10) ] [ Html.text "Pitch +10" ]
+            , Html.button [ Html.Events.onClick (PitchInput -10) ] [ Html.text "Pitch -10" ]
+            ]
+        , Html.p []
+            [ Html.button [ Html.Events.onClick (YawInput 10) ] [ Html.text "Yaw +10" ]
+            , Html.button [ Html.Events.onClick (YawInput -10) ] [ Html.text "Yaw -10" ]
+            ]
+        , Html.p []
+            [ Html.button [ Html.Events.onClick (RollInput 10) ] [ Html.text "Roll +10" ]
+            , Html.button [ Html.Events.onClick (RollInput -10) ] [ Html.text "Roll -10" ]
+            ]
+        ]
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -414,6 +464,9 @@ view model =
 
                 StateDump ->
                     viewStateDump model.particle
+
+                OrientationControls ->
+                    viewOrientationControls
     in
     main_ [ Html.Attributes.id "app" ]
         (List.map viewModule model.modules)
