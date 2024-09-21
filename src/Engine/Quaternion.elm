@@ -7,7 +7,6 @@ module Engine.Quaternion exposing
     , magnitude
     , multiply
     , normalize
-    , toEuler
     , xToEuler
     , yToEuler
     , zToEuler
@@ -44,15 +43,19 @@ fromVector3 vector =
 fromEulerAngles : Float -> Float -> Float -> Quaternion
 fromEulerAngles phi theta psi =
     let
+        qw : Float
         qw =
             cos (phi * 0.5) * cos (theta * 0.5) * cos (psi * 0.5) + sin (phi * 0.5) * sin (theta * 0.5) * sin (psi * 0.5)
 
+        qx : Float
         qx =
             sin (phi * 0.5) * cos (theta * 0.5) * cos (psi * 0.5) - cos (phi * 0.5) * sin (theta * 0.5) * sin (psi * 0.5)
 
+        qy : Float
         qy =
             cos (phi * 0.5) * sin (theta * 0.5) * cos (psi * 0.5) + sin (phi * 0.5) * cos (theta * 0.5) * sin (psi * 0.5)
 
+        qz : Float
         qz =
             cos (phi * 0.5) * cos (theta * 0.5) * sin (psi * 0.5) - sin (phi * 0.5) * sin (theta * 0.5) * cos (psi * 0.5)
     in
@@ -105,9 +108,11 @@ multiply p q =
 xToEuler : Quaternion -> Float
 xToEuler quaternion =
     let
+        t0 : Float
         t0 =
             2 * (quaternion.scalar * quaternion.vector.x + quaternion.vector.y * quaternion.vector.z)
 
+        t1 : Float
         t1 =
             1 - 2 * (quaternion.vector.x * quaternion.vector.x + quaternion.vector.y * quaternion.vector.y)
     in
@@ -117,9 +122,11 @@ xToEuler quaternion =
 yToEuler : Quaternion -> Float
 yToEuler quaternion =
     let
+        z : Float
         z =
             zToEuler quaternion
 
+        t2 : Float
         t2 =
             2
                 * (quaternion.scalar * quaternion.vector.y - z * quaternion.vector.x)
@@ -140,51 +147,12 @@ yToEuler quaternion =
 zToEuler : Quaternion -> Float
 zToEuler quaternion =
     let
+        t3 : Float
         t3 =
             2 * (quaternion.scalar * quaternion.vector.z + quaternion.vector.x * quaternion.vector.y)
 
+        t4 : Float
         t4 =
             1 - 2 * (quaternion.vector.y * quaternion.vector.y + quaternion.vector.z * quaternion.vector.z)
     in
     atan2 t3 t4
-
-
-toEuler : Quaternion -> Vector
-toEuler quaternion =
-    let
-        t0 =
-            2 * (quaternion.scalar * quaternion.vector.x + quaternion.vector.y * quaternion.vector.z)
-
-        t1 =
-            1 - 2 * (quaternion.vector.x * quaternion.vector.x + quaternion.vector.y * quaternion.vector.y)
-
-        x =
-            atan2 t0 t1
-
-        t2 =
-            2
-                * (quaternion.scalar * quaternion.vector.y - z * quaternion.vector.x)
-                |> (\n ->
-                        if n > 1 then
-                            1
-
-                        else if n < -1 then
-                            -1
-
-                        else
-                            n
-                   )
-
-        y =
-            asin t2
-
-        t3 =
-            2 * (quaternion.scalar * quaternion.vector.z + quaternion.vector.x * quaternion.vector.y)
-
-        t4 =
-            1 - 2 * (quaternion.vector.y * quaternion.vector.y + quaternion.vector.z * quaternion.vector.z)
-
-        z =
-            atan2 t3 t4
-    in
-    Vector.new x y z

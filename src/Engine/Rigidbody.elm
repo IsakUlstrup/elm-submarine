@@ -100,6 +100,7 @@ rotate quaternion body =
 translateRelative : Vector -> Rigidbody -> Rigidbody
 translateRelative vector body =
     let
+        rotatedVector : Vector
         rotatedVector =
             vectorMultiply body.orientation vector
     in

@@ -168,6 +168,7 @@ update msg model =
 viewVector : List (Svg.Attribute msg) -> Vector -> Svg msg
 viewVector attrs vector =
     let
+        to : Vector
         to =
             Vector.scale 50 vector
     in

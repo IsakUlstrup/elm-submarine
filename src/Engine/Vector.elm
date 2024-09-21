@@ -5,22 +5,14 @@ module Engine.Vector exposing
     , cross
     , divide
     , dot
-    , getX
-    , getY
-    , getZ
     , magnitude
     , multiply
     , new
     , normalize
-    , pitch
     , right
     , scale
-    , setX
-    , setY
-    , setZ
     , subtract
     , up
-    , yaw
     , zero
     )
 
@@ -108,14 +100,14 @@ multiply v1 v2 =
 
 dot : Vector -> Vector -> Float
 dot u v =
-    (getX u * getX v) + (getY u * getY v) + (getZ u * getZ v)
+    (u.x * v.x) + (u.y * v.y) + (u.z * v.z)
 
 
 cross : Vector -> Vector -> Vector
 cross u v =
-    new ((getY u * getZ v) - (getZ u * getY v))
-        ((getZ u * getX v) - (getX u * getZ v))
-        ((getX u * getY v) - (getY u * getX v))
+    new ((u.y * v.z) - (u.z * v.y))
+        ((u.z * v.x) - (u.x * v.z))
+        ((u.x * v.y) - (u.y * v.x))
 
 
 magnitude : Vector -> Float
@@ -126,47 +118,3 @@ magnitude vector =
 normalize : Vector -> Vector
 normalize v =
     scale (1 / magnitude v) v
-
-
-
--- GET/SET
-
-
-getX : Vector -> Float
-getX vector =
-    vector.x
-
-
-setX : Float -> Vector -> Vector
-setX component vector =
-    { vector | x = component }
-
-
-getY : Vector -> Float
-getY vector =
-    vector.y
-
-
-setY : Float -> Vector -> Vector
-setY component vector =
-    { vector | y = component }
-
-
-getZ : Vector -> Float
-getZ vector =
-    vector.z
-
-
-setZ : Float -> Vector -> Vector
-setZ component vector =
-    { vector | z = component }
-
-
-pitch : Vector -> Float
-pitch vector =
-    asin vector.y
-
-
-yaw : Vector -> Float
-yaw vector =
-    atan2 vector.x vector.z
