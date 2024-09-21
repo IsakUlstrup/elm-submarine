@@ -289,12 +289,6 @@ viewPhysicsDebug _ rigidbody =
                     ]
                 ]
             ]
-        , Html.div []
-            [ Html.p []
-                [ Html.text "Velocity: "
-                , Html.text (rigidbody |> Rigidbody.velocity |> Vector.magnitude |> prettyFloat)
-                ]
-            ]
         ]
 
 
@@ -372,12 +366,32 @@ viewStateDump : Rigidbody -> Html msg
 viewStateDump rigidbody =
     Html.div []
         [ Html.p []
+            [ Html.text "X (rad): "
+            , Html.text (prettyFloat (Quaternion.xToEuler rigidbody.orientation))
+            ]
+        , Html.p []
+            [ Html.text "Y (rad): "
+            , Html.text (prettyFloat (Quaternion.yToEuler rigidbody.orientation))
+            ]
+        , Html.p []
             [ Html.text "Z (rad): "
             , Html.text (prettyFloat (Quaternion.zToEuler rigidbody.orientation))
             ]
         , Html.p []
-            [ Html.text "pos: "
-            , Html.text (Debug.toString rigidbody.position)
+            [ Html.text "x: "
+            , Html.text (prettyFloat rigidbody.position.x)
+            ]
+        , Html.p []
+            [ Html.text "y: "
+            , Html.text (prettyFloat rigidbody.position.y)
+            ]
+        , Html.p []
+            [ Html.text "z: "
+            , Html.text (prettyFloat rigidbody.position.z)
+            ]
+        , Html.p []
+            [ Html.text "Velocity: "
+            , Html.text (rigidbody |> Rigidbody.velocity |> Vector.magnitude |> prettyFloat)
             ]
         ]
 
