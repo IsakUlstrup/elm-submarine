@@ -241,7 +241,7 @@ viewPhysicsDebug controls particle =
             , Svg.Attributes.class "movement-debug"
 
             -- flip svg y axis so we can use cartesian coordinates
-            , Svg.Attributes.transform "matrix(1 0 0 -1 0 0)"
+            --, Svg.Attributes.transform "matrix(1 0 0 -1 0 0)"
             ]
             [ viewGrid particle.position
             , Svg.g
@@ -252,12 +252,32 @@ viewPhysicsDebug controls particle =
                 [ viewVector
                     [ Svg.Attributes.stroke "orange" ]
                     (Particle.velocity particle)
-                , viewVector
-                    [ Svg.Attributes.stroke "red" ]
-                    (particle |> Particle.forwards)
-                , viewVector
-                    [ Svg.Attributes.stroke "cyan" ]
-                    (particle |> Particle.forwards |> Vector2.rotate controls.rudder)
+                , Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat (particle.orientation * 180 / pi) ++ ")") ]
+                    [ Svg.line
+                        [ Svg.Attributes.x1 "0"
+                        , Svg.Attributes.y1 "0"
+                        , Svg.Attributes.x2 "100"
+                        , Svg.Attributes.y2 "0"
+                        , Svg.Attributes.stroke "red"
+                        ]
+                        []
+                    , Svg.line
+                        [ Svg.Attributes.x1 "0"
+                        , Svg.Attributes.y1 "0"
+                        , Svg.Attributes.x2 "0"
+                        , Svg.Attributes.y2 "-100"
+                        , Svg.Attributes.stroke "green"
+                        ]
+                        []
+                    , Svg.line
+                        [ Svg.Attributes.x1 "0"
+                        , Svg.Attributes.y1 "0"
+                        , Svg.Attributes.x2 "0"
+                        , Svg.Attributes.y2 "0"
+                        , Svg.Attributes.stroke "blue"
+                        ]
+                        []
+                    ]
                 ]
             ]
         , Html.div []
