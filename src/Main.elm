@@ -6,14 +6,11 @@ import Controls exposing (Controls)
 import Dict exposing (Dict)
 import Engine.Quaternion as Quaternion
 import Engine.Rigidbody as Rigidbody exposing (Rigidbody)
-import Engine.Vector as Vector exposing (Vector)
+import Engine.Vector as Vector
 import Html exposing (Html, main_)
 import Html.Attributes
 import Html.Events
-import Html.Lazy
 import Json.Decode as Decode exposing (Decoder)
-import Svg exposing (Svg)
-import Svg.Attributes
 import Timing exposing (Timing)
 
 
@@ -48,13 +45,14 @@ import Timing exposing (Timing)
 rotation : Float -> Controls -> Rigidbody -> Rigidbody
 rotation dt controls rigidbody =
     rigidbody
-        |> Rigidbody.rotate (Rigidbody.zRotation (controls.rudder * dt * 0.1 |> degrees))
+        |> Rigidbody.rotate (Rigidbody.xRotation (controls.rudderPitch * dt * 0.1 |> degrees))
+        |> Rigidbody.rotate (Rigidbody.yRotation (controls.rudderYaw * dt * 0.1 |> degrees))
 
 
 movement : Float -> Controls -> Rigidbody -> Rigidbody
 movement dt controls rigidbody =
     rigidbody
-        |> Rigidbody.translateRelative (Vector.right |> Vector.scale (controls.throttle * controls.enginePower * dt))
+        |> Rigidbody.translateRelative (Vector.back |> Vector.scale -(controls.throttle * controls.enginePower * dt))
 
 
 
@@ -62,11 +60,10 @@ movement dt controls rigidbody =
 
 
 type Module
-    = SteeringButtons
+    = RudderPitchInput
+    | RudderYawInput
     | ThrottleButtons
-    | PhysicsDebug
     | StateDump
-    | OrientationControls
 
 
 
@@ -89,19 +86,18 @@ init _ =
          -- |> Particle.setOrientation (pi / 2)
          -- |> Particle.applyForce (Vector2.new 0 30)
         )
-        [ SteeringButtons
+        [ RudderPitchInput
+        , RudderYawInput
         , ThrottleButtons
-        , PhysicsDebug
         , StateDump
-        , OrientationControls
         ]
         (Controls.new 1 0.1)
         0
         (Dict.fromList
-            [ ( "w", ( ThrottleInput 1, ThrottleInput 0 ) )
-            , ( "s", ( ThrottleInput -1, ThrottleInput 0 ) )
-            , ( "a", ( SteeringInput -1, SteeringInput 0 ) )
-            , ( "d", ( SteeringInput 1, SteeringInput 0 ) )
+            [ ( "w", ( SteeringPitchInput 1, SteeringPitchInput 0 ) )
+            , ( "s", ( SteeringPitchInput -1, SteeringPitchInput 0 ) )
+            , ( "a", ( SteeringYawInput -1, SteeringYawInput 0 ) )
+            , ( "d", ( SteeringYawInput 1, SteeringYawInput 0 ) )
             ]
         )
     , Cmd.none
@@ -114,11 +110,15 @@ init _ =
 
 type Msg
     = Tick Float
-    | SteeringInput Float
+    | SteeringPitchInput Float
+    | SteeringYawInput Float
     | ThrottleInput Float
-    | PitchInput Float
-    | YawInput Float
-    | RollInput Float
+
+
+
+-- | PitchInput Float
+-- | YawInput Float
+-- | RollInput Float
 
 
 physicsUpdate : Controls -> Float -> Rigidbody -> Rigidbody
@@ -150,116 +150,89 @@ update msg model =
             ( { model
                 | particle = newParticle
                 , timing = newTiming
-                , controls = Controls.tick dt model.controls
+
+                -- , controls = Controls.tick dt model.controls
               }
             , Cmd.none
             )
 
-        SteeringInput input ->
-            ( { model | controls = Controls.setRudderInput input model.controls }
+        SteeringPitchInput input ->
+            ( { model | controls = Controls.setRudderPitch input model.controls }
+            , Cmd.none
+            )
+
+        SteeringYawInput input ->
+            ( { model | controls = Controls.setRudderYaw input model.controls }
             , Cmd.none
             )
 
         ThrottleInput input ->
-            ( { model | controls = Controls.setThrottleInput input model.controls }
-            , Cmd.none
-            )
-
-        PitchInput input ->
-            ( { model
-                | particle =
-                    model.particle
-                        |> Rigidbody.rotate (Rigidbody.xRotation (degrees input))
-              }
-            , Cmd.none
-            )
-
-        YawInput input ->
-            ( { model
-                | particle =
-                    model.particle
-                        |> Rigidbody.rotate (Rigidbody.yRotation (degrees input))
-              }
-            , Cmd.none
-            )
-
-        RollInput input ->
-            ( { model
-                | particle =
-                    model.particle
-                        |> Rigidbody.rotate (Rigidbody.zRotation (degrees input))
-              }
+            ( { model | controls = Controls.setThrottle input model.controls }
             , Cmd.none
             )
 
 
 
 -- VIEW
-
-
-viewVector : List (Svg.Attribute msg) -> Vector -> Svg msg
-viewVector attrs vector =
-    let
-        to : Vector
-        to =
-            Vector.scale 50 vector
-    in
-    Svg.line
-        ([ Svg.Attributes.x1 "0"
-         , Svg.Attributes.y1 "0"
-         , Svg.Attributes.x2 (String.fromFloat to.x)
-         , Svg.Attributes.y2 (String.fromFloat to.y)
-         ]
-            ++ attrs
-        )
-        []
-
-
-viewGrid : Vector -> Svg msg
-viewGrid pos =
-    let
-        verticalLine : Int -> Svg msg
-        verticalLine x =
-            Svg.line
-                [ Svg.Attributes.x1 (String.fromInt x)
-                , Svg.Attributes.y1 "-500"
-                , Svg.Attributes.x2 (String.fromInt x)
-                , Svg.Attributes.y2 "500"
-                ]
-                []
-
-        horizontalLine : Int -> Svg msg
-        horizontalLine y =
-            Svg.line
-                [ Svg.Attributes.x1 "-500"
-                , Svg.Attributes.y1 (String.fromInt y)
-                , Svg.Attributes.x2 "500"
-                , Svg.Attributes.y2 (String.fromInt y)
-                ]
-                []
-
-        spacing : Int
-        spacing =
-            200
-    in
-    Svg.g
-        [ Svg.Attributes.stroke "#262626"
-        , Svg.Attributes.transform
-            ("translate("
-                ++ String.fromInt -(modBy spacing (round pos.x))
-                ++ ", "
-                ++ String.fromInt -(modBy spacing (round pos.y))
-                ++ ")"
-            )
-        ]
-        (List.range -2 2
-            |> List.concatMap
-                (\i ->
-                    [ verticalLine (i * spacing)
-                    , horizontalLine (i * spacing)
-                    ]
-                )
-        )
+-- viewVector : List (Svg.Attribute msg) -> Vector -> Svg msg
+-- viewVector attrs vector =
+--     let
+--         to : Vector
+--         to =
+--             Vector.scale 50 vector
+--     in
+--     Svg.line
+--         ([ Svg.Attributes.x1 "0"
+--          , Svg.Attributes.y1 "0"
+--          , Svg.Attributes.x2 (String.fromFloat to.x)
+--          , Svg.Attributes.y2 (String.fromFloat to.y)
+--          ]
+--             ++ attrs
+--         )
+--         []
+-- viewGrid : Vector -> Svg msg
+-- viewGrid pos =
+--     let
+--         verticalLine : Int -> Svg msg
+--         verticalLine x =
+--             Svg.line
+--                 [ Svg.Attributes.x1 (String.fromInt x)
+--                 , Svg.Attributes.y1 "-500"
+--                 , Svg.Attributes.x2 (String.fromInt x)
+--                 , Svg.Attributes.y2 "500"
+--                 ]
+--                 []
+--         horizontalLine : Int -> Svg msg
+--         horizontalLine y =
+--             Svg.line
+--                 [ Svg.Attributes.x1 "-500"
+--                 , Svg.Attributes.y1 (String.fromInt y)
+--                 , Svg.Attributes.x2 "500"
+--                 , Svg.Attributes.y2 (String.fromInt y)
+--                 ]
+--                 []
+--         spacing : Int
+--         spacing =
+--             200
+--     in
+--     Svg.g
+--         [ Svg.Attributes.stroke "#262626"
+--         , Svg.Attributes.transform
+--             ("translate("
+--                 ++ String.fromInt -(modBy spacing (round pos.x))
+--                 ++ ", "
+--                 ++ String.fromInt -(modBy spacing (round pos.y))
+--                 ++ ")"
+--             )
+--         ]
+--         (List.range -2 2
+--             |> List.concatMap
+--                 (\i ->
+--                     [ verticalLine (i * spacing)
+--                     , horizontalLine (i * spacing)
+--                     ]
+--                 )
+--         )
 
 
 prettyFloat : Float -> String
@@ -275,88 +248,89 @@ prettyFloat n =
             "E: " ++ String.fromFloat n
 
 
-viewPhysicsDebug : Controls -> Rigidbody -> Html msg
-viewPhysicsDebug _ rigidbody =
+
+-- viewPhysicsDebug : Controls -> Rigidbody -> Html msg
+-- viewPhysicsDebug _ rigidbody =
+--     Html.div []
+--         [ Svg.svg
+--             [ Svg.Attributes.viewBox "-250 -250 500 500"
+--             , Svg.Attributes.class "movement-debug"
+--             -- flip svg y axis so we can use cartesian coordinates
+--             --, Svg.Attributes.transform "matrix(1 0 0 -1 0 0)"
+--             ]
+--             [ viewGrid rigidbody.position
+--             , Svg.g
+--                 [ Svg.Attributes.strokeWidth "7"
+--                 , Svg.Attributes.stroke "white"
+--                 , Svg.Attributes.strokeLinecap "round"
+--                 ]
+--                 [ viewVector
+--                     [ Svg.Attributes.stroke "orange" ]
+--                     (Rigidbody.velocity rigidbody)
+--                 , Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat (Quaternion.zToEuler rigidbody.orientation * 180 / pi) ++ ")") ]
+--                     [ Svg.line
+--                         [ Svg.Attributes.x1 "0"
+--                         , Svg.Attributes.y1 "0"
+--                         , Svg.Attributes.x2 "100"
+--                         , Svg.Attributes.y2 "0"
+--                         , Svg.Attributes.stroke "red"
+--                         ]
+--                         []
+--                     , Svg.line
+--                         [ Svg.Attributes.x1 "0"
+--                         , Svg.Attributes.y1 "0"
+--                         , Svg.Attributes.x2 "0"
+--                         , Svg.Attributes.y2 "-100"
+--                         , Svg.Attributes.stroke "green"
+--                         ]
+--                         []
+--                     , Svg.line
+--                         [ Svg.Attributes.x1 "0"
+--                         , Svg.Attributes.y1 "0"
+--                         , Svg.Attributes.x2 "0"
+--                         , Svg.Attributes.y2 "0"
+--                         , Svg.Attributes.stroke "blue"
+--                         ]
+--                         []
+--                     ]
+--                 ]
+--             ]
+--         ]
+
+
+viewRudderButtons : String -> (Float -> Msg) -> Controls -> Html Msg
+viewRudderButtons axisName inputMsg controls =
     Html.div []
-        [ Svg.svg
-            [ Svg.Attributes.viewBox "-250 -250 500 500"
-            , Svg.Attributes.class "movement-debug"
-
-            -- flip svg y axis so we can use cartesian coordinates
-            --, Svg.Attributes.transform "matrix(1 0 0 -1 0 0)"
-            ]
-            [ viewGrid rigidbody.position
-            , Svg.g
-                [ Svg.Attributes.strokeWidth "7"
-                , Svg.Attributes.stroke "white"
-                , Svg.Attributes.strokeLinecap "round"
-                ]
-                [ viewVector
-                    [ Svg.Attributes.stroke "orange" ]
-                    (Rigidbody.velocity rigidbody)
-                , Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat (Quaternion.zToEuler rigidbody.orientation * 180 / pi) ++ ")") ]
-                    [ Svg.line
-                        [ Svg.Attributes.x1 "0"
-                        , Svg.Attributes.y1 "0"
-                        , Svg.Attributes.x2 "100"
-                        , Svg.Attributes.y2 "0"
-                        , Svg.Attributes.stroke "red"
-                        ]
-                        []
-                    , Svg.line
-                        [ Svg.Attributes.x1 "0"
-                        , Svg.Attributes.y1 "0"
-                        , Svg.Attributes.x2 "0"
-                        , Svg.Attributes.y2 "-100"
-                        , Svg.Attributes.stroke "green"
-                        ]
-                        []
-                    , Svg.line
-                        [ Svg.Attributes.x1 "0"
-                        , Svg.Attributes.y1 "0"
-                        , Svg.Attributes.x2 "0"
-                        , Svg.Attributes.y2 "0"
-                        , Svg.Attributes.stroke "blue"
-                        ]
-                        []
-                    ]
-                ]
-            ]
-        ]
-
-
-viewSteeringButtons : Controls -> Html Msg
-viewSteeringButtons controls =
-    Html.div []
-        [ Html.h1 [] [ Html.text "Rudder" ]
+        [ Html.h1 [] [ Html.text axisName ]
         , Html.div [ Html.Attributes.class "button-group" ]
             [ Html.button
-                [ Html.Events.onMouseDown (SteeringInput -1)
-                , Html.Events.onMouseUp (SteeringInput 0)
+                [ Html.Events.onMouseDown (inputMsg -1)
+                , Html.Events.onMouseUp (inputMsg 0)
                 ]
-                [ Html.text "Left" ]
+                [ Html.text "-" ]
             , Html.button
-                [ Html.Events.onMouseDown (SteeringInput 1)
-                , Html.Events.onMouseUp (SteeringInput 0)
+                [ Html.Events.onMouseDown (inputMsg 1)
+                , Html.Events.onMouseUp (inputMsg 0)
                 ]
-                [ Html.text "Right" ]
+                [ Html.text "+" ]
             ]
         , Html.input
             [ Html.Attributes.type_ "range"
             , Html.Attributes.min "-1"
             , Html.Attributes.max "1"
             , Html.Attributes.step "0.1"
-            , Html.Attributes.value (String.fromFloat controls.rudderInput)
-            , Html.Events.onInput (String.toFloat >> Maybe.withDefault controls.rudderInput >> SteeringInput)
-            , Html.Events.onMouseUp (SteeringInput 0)
+            , Html.Attributes.value (String.fromFloat controls.rudderPitch)
+            , Html.Events.onInput (String.toFloat >> Maybe.withDefault controls.rudderPitch >> inputMsg)
+            , Html.Events.onMouseUp (inputMsg 0)
             ]
             []
-        , Html.meter
-            [ Html.Attributes.min "-1"
-            , Html.Attributes.max "1"
-            , Html.Attributes.value (String.fromFloat controls.rudder)
-            ]
-            []
+
+        -- , Html.meter
+        --     [ Html.Attributes.min "-1"
+        --     , Html.Attributes.max "1"
+        --     , Html.Attributes.value (String.fromFloat controls.rudderPitch)
+        --     ]
+        --     []
         ]
 
 
@@ -381,17 +355,18 @@ viewThrottleButtons controls =
             , Html.Attributes.min "-1"
             , Html.Attributes.max "1"
             , Html.Attributes.step "0.1"
-            , Html.Attributes.value (String.fromFloat controls.throttleInput)
-            , Html.Events.onInput (String.toFloat >> Maybe.withDefault controls.throttleInput >> ThrottleInput)
+            , Html.Attributes.value (String.fromFloat controls.throttle)
+            , Html.Events.onInput (String.toFloat >> Maybe.withDefault controls.throttle >> ThrottleInput)
             , Html.Events.onMouseUp (ThrottleInput 0)
             ]
             []
-        , Html.meter
-            [ Html.Attributes.min "-1"
-            , Html.Attributes.max "1"
-            , Html.Attributes.value (String.fromFloat controls.throttle)
-            ]
-            []
+
+        -- , Html.meter
+        --     [ Html.Attributes.min "-1"
+        --     , Html.Attributes.max "1"
+        --     , Html.Attributes.value (String.fromFloat controls.throttle)
+        --     ]
+        --     []
         ]
 
 
@@ -429,44 +404,23 @@ viewStateDump rigidbody =
         ]
 
 
-viewOrientationControls : Html Msg
-viewOrientationControls =
-    Html.div []
-        [ Html.p []
-            [ Html.button [ Html.Events.onClick (PitchInput 10) ] [ Html.text "Pitch +10" ]
-            , Html.button [ Html.Events.onClick (PitchInput -10) ] [ Html.text "Pitch -10" ]
-            ]
-        , Html.p []
-            [ Html.button [ Html.Events.onClick (YawInput 10) ] [ Html.text "Yaw +10" ]
-            , Html.button [ Html.Events.onClick (YawInput -10) ] [ Html.text "Yaw -10" ]
-            ]
-        , Html.p []
-            [ Html.button [ Html.Events.onClick (RollInput 10) ] [ Html.text "Roll +10" ]
-            , Html.button [ Html.Events.onClick (RollInput -10) ] [ Html.text "Roll -10" ]
-            ]
-        ]
-
-
 view : Model -> Html Msg
 view model =
     let
         viewModule : Module -> Html Msg
         viewModule m =
             case m of
-                SteeringButtons ->
-                    viewSteeringButtons model.controls
+                RudderPitchInput ->
+                    viewRudderButtons "Pitch" SteeringPitchInput model.controls
+
+                RudderYawInput ->
+                    viewRudderButtons "Yaw" SteeringYawInput model.controls
 
                 ThrottleButtons ->
                     viewThrottleButtons model.controls
 
-                PhysicsDebug ->
-                    Html.Lazy.lazy2 viewPhysicsDebug model.controls model.particle
-
                 StateDump ->
                     viewStateDump model.particle
-
-                OrientationControls ->
-                    viewOrientationControls
     in
     main_ [ Html.Attributes.id "app" ]
         (List.map viewModule model.modules)
