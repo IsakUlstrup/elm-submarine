@@ -6,11 +6,13 @@ import Controls exposing (Controls)
 import Dict exposing (Dict)
 import Engine.Quaternion as Quaternion
 import Engine.Rigidbody as Rigidbody exposing (Rigidbody)
-import Engine.Vector as Vector
+import Engine.Vector as Vector exposing (Vector)
 import Html exposing (Html, main_)
 import Html.Attributes
 import Html.Events
 import Json.Decode as Decode exposing (Decoder)
+import Svg exposing (Svg)
+import Svg.Attributes
 import Timing exposing (Timing)
 
 
@@ -64,6 +66,7 @@ type Module
     | RudderYawInput
     | ThrottleButtons
     | StateDump
+    | RigidBodyDebug
 
 
 
@@ -90,6 +93,7 @@ init _ =
         , RudderYawInput
         , ThrottleButtons
         , StateDump
+        , RigidBodyDebug
         ]
         (Controls.new 1 0.1)
         0
@@ -190,49 +194,53 @@ update msg model =
 --             ++ attrs
 --         )
 --         []
--- viewGrid : Vector -> Svg msg
--- viewGrid pos =
---     let
---         verticalLine : Int -> Svg msg
---         verticalLine x =
---             Svg.line
---                 [ Svg.Attributes.x1 (String.fromInt x)
---                 , Svg.Attributes.y1 "-500"
---                 , Svg.Attributes.x2 (String.fromInt x)
---                 , Svg.Attributes.y2 "500"
---                 ]
---                 []
---         horizontalLine : Int -> Svg msg
---         horizontalLine y =
---             Svg.line
---                 [ Svg.Attributes.x1 "-500"
---                 , Svg.Attributes.y1 (String.fromInt y)
---                 , Svg.Attributes.x2 "500"
---                 , Svg.Attributes.y2 (String.fromInt y)
---                 ]
---                 []
---         spacing : Int
---         spacing =
---             200
---     in
---     Svg.g
---         [ Svg.Attributes.stroke "#262626"
---         , Svg.Attributes.transform
---             ("translate("
---                 ++ String.fromInt -(modBy spacing (round pos.x))
---                 ++ ", "
---                 ++ String.fromInt -(modBy spacing (round pos.y))
---                 ++ ")"
---             )
---         ]
---         (List.range -2 2
---             |> List.concatMap
---                 (\i ->
---                     [ verticalLine (i * spacing)
---                     , horizontalLine (i * spacing)
---                     ]
---                 )
---         )
+
+
+viewGrid : Vector -> Svg msg
+viewGrid pos =
+    let
+        verticalLine : Int -> Svg msg
+        verticalLine x =
+            Svg.line
+                [ Svg.Attributes.x1 (String.fromInt x)
+                , Svg.Attributes.y1 "-500"
+                , Svg.Attributes.x2 (String.fromInt x)
+                , Svg.Attributes.y2 "500"
+                ]
+                []
+
+        horizontalLine : Int -> Svg msg
+        horizontalLine y =
+            Svg.line
+                [ Svg.Attributes.x1 "-500"
+                , Svg.Attributes.y1 (String.fromInt y)
+                , Svg.Attributes.x2 "500"
+                , Svg.Attributes.y2 (String.fromInt y)
+                ]
+                []
+
+        spacing : Int
+        spacing =
+            200
+    in
+    Svg.g
+        [ Svg.Attributes.stroke "#262626"
+        , Svg.Attributes.transform
+            ("translate("
+                ++ String.fromInt -(modBy spacing (round pos.x))
+                ++ ", "
+                ++ String.fromInt -(modBy spacing (round pos.z))
+                ++ ")"
+            )
+        ]
+        (List.range -2 2
+            |> List.concatMap
+                (\i ->
+                    [ verticalLine (i * spacing)
+                    , horizontalLine (i * spacing)
+                    ]
+                )
+        )
 
 
 prettyFloat : Float -> String
@@ -248,54 +256,79 @@ prettyFloat n =
             "E: " ++ String.fromFloat n
 
 
+viewPhysicsDebug : Rigidbody -> Html msg
+viewPhysicsDebug rigidbody =
+    let
+        _ =
+            (Quaternion.yToEuler rigidbody.orientation * 180)
+                / pi
+                |> Debug.log "rotation"
+    in
+    Html.div []
+        [ Svg.svg
+            [ Svg.Attributes.viewBox "-250 -250 500 500"
+            , Svg.Attributes.class "movement-debug"
 
--- viewPhysicsDebug : Controls -> Rigidbody -> Html msg
--- viewPhysicsDebug _ rigidbody =
---     Html.div []
---         [ Svg.svg
---             [ Svg.Attributes.viewBox "-250 -250 500 500"
---             , Svg.Attributes.class "movement-debug"
---             -- flip svg y axis so we can use cartesian coordinates
---             --, Svg.Attributes.transform "matrix(1 0 0 -1 0 0)"
---             ]
---             [ viewGrid rigidbody.position
---             , Svg.g
---                 [ Svg.Attributes.strokeWidth "7"
---                 , Svg.Attributes.stroke "white"
---                 , Svg.Attributes.strokeLinecap "round"
---                 ]
---                 [ viewVector
---                     [ Svg.Attributes.stroke "orange" ]
---                     (Rigidbody.velocity rigidbody)
---                 , Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat (Quaternion.zToEuler rigidbody.orientation * 180 / pi) ++ ")") ]
---                     [ Svg.line
---                         [ Svg.Attributes.x1 "0"
---                         , Svg.Attributes.y1 "0"
---                         , Svg.Attributes.x2 "100"
---                         , Svg.Attributes.y2 "0"
---                         , Svg.Attributes.stroke "red"
---                         ]
---                         []
---                     , Svg.line
---                         [ Svg.Attributes.x1 "0"
---                         , Svg.Attributes.y1 "0"
---                         , Svg.Attributes.x2 "0"
---                         , Svg.Attributes.y2 "-100"
---                         , Svg.Attributes.stroke "green"
---                         ]
---                         []
---                     , Svg.line
---                         [ Svg.Attributes.x1 "0"
---                         , Svg.Attributes.y1 "0"
---                         , Svg.Attributes.x2 "0"
---                         , Svg.Attributes.y2 "0"
---                         , Svg.Attributes.stroke "blue"
---                         ]
---                         []
---                     ]
---                 ]
---             ]
---         ]
+            -- flip svg y axis so we can use cartesian coordinates
+            --, Svg.Attributes.transform "matrix(1 0 0 -1 0 0)"
+            ]
+            [ viewGrid rigidbody.position
+            , Svg.g [ Svg.Attributes.strokeWidth "7", Svg.Attributes.transform ("rotate(" ++ String.fromFloat ((Quaternion.yToEuler rigidbody.orientation * 180) / pi) ++ ")") ]
+                [ Svg.line
+                    [ Svg.Attributes.x1 "0"
+                    , Svg.Attributes.y1 "0"
+                    , Svg.Attributes.x2 "100"
+                    , Svg.Attributes.y2 "0"
+                    , Svg.Attributes.stroke "red"
+                    ]
+                    []
+                , Svg.line
+                    [ Svg.Attributes.x1 "0"
+                    , Svg.Attributes.y1 "0"
+                    , Svg.Attributes.x2 "0"
+                    , Svg.Attributes.y2 "100"
+                    , Svg.Attributes.stroke "blue"
+                    ]
+                    []
+                ]
+
+            -- , Svg.g
+            --     [ Svg.Attributes.strokeWidth "7"
+            --     , Svg.Attributes.stroke "white"
+            --     , Svg.Attributes.strokeLinecap "round"
+            --     ]
+            --     [ viewVector
+            --         [ Svg.Attributes.stroke "orange" ]
+            --         (Rigidbody.velocity rigidbody)
+            --     , Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat (Quaternion.zToEuler rigidbody.orientation * 180 / pi) ++ ")") ]
+            --         [ Svg.line
+            --             [ Svg.Attributes.x1 "0"
+            --             , Svg.Attributes.y1 "0"
+            --             , Svg.Attributes.x2 "100"
+            --             , Svg.Attributes.y2 "0"
+            --             , Svg.Attributes.stroke "red"
+            --             ]
+            --             []
+            --         , Svg.line
+            --             [ Svg.Attributes.x1 "0"
+            --             , Svg.Attributes.y1 "0"
+            --             , Svg.Attributes.x2 "0"
+            --             , Svg.Attributes.y2 "-100"
+            --             , Svg.Attributes.stroke "green"
+            --             ]
+            --             []
+            --         , Svg.line
+            --             [ Svg.Attributes.x1 "0"
+            --             , Svg.Attributes.y1 "0"
+            --             , Svg.Attributes.x2 "0"
+            --             , Svg.Attributes.y2 "0"
+            --             , Svg.Attributes.stroke "blue"
+            --             ]
+            --             []
+            --         ]
+            --     ]
+            ]
+        ]
 
 
 viewRudderButtons : String -> (Float -> Msg) -> Controls -> Html Msg
@@ -421,6 +454,9 @@ view model =
 
                 StateDump ->
                     viewStateDump model.particle
+
+                RigidBodyDebug ->
+                    viewPhysicsDebug model.particle
     in
     main_ [ Html.Attributes.id "app" ]
         (List.map viewModule model.modules)
