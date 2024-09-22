@@ -56,34 +56,6 @@ zRotation angle =
     new (cos (0.5 * angle)) 0 0 (sin (0.5 * angle))
 
 
-fromEuler : Float -> Float -> Float -> Quaternion
-fromEuler x y z =
-    let
-        cr =
-            cos (z * 0.5)
-
-        sr =
-            sin (z * 0.5)
-
-        cp =
-            cos (x * 0.5)
-
-        sp =
-            sin (x * 0.5)
-
-        cy =
-            cos (y * 0.5)
-
-        sy =
-            sin (y * 0.5)
-    in
-    new
-        (cr * cp * cy + sr * sp * sy)
-        (sr * cp * cy - cr * sp * sy)
-        (cr * sp * cy + sr * cp * sy)
-        (cr * cp * sy - sr * sp * cy)
-
-
 
 -- OPERATIONS
 
