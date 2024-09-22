@@ -1,14 +1,16 @@
 module Engine.Quaternion exposing
     ( Quaternion
-    , fromEulerAngles
     , fromVector3
     , identity
     , inverse
     , magnitude
     , multiply
     , normalize
+    , xRotation
     , xToEuler
+    , yRotation
     , yToEuler
+    , zRotation
     , zToEuler
     )
 
@@ -40,29 +42,39 @@ fromVector3 vector =
     Quaternion 0 vector
 
 
-fromEulerAngles : Float -> Float -> Float -> Quaternion
-fromEulerAngles phi theta psi =
-    let
-        qw : Float
-        qw =
-            cos (phi * 0.5) * cos (theta * 0.5) * cos (psi * 0.5) + sin (phi * 0.5) * sin (theta * 0.5) * sin (psi * 0.5)
+xRotation : Float -> Quaternion
+xRotation angle =
+    new (cos (0.5 * angle)) (sin (0.5 * angle)) 0 0
 
-        qx : Float
-        qx =
-            sin (phi * 0.5) * cos (theta * 0.5) * cos (psi * 0.5) - cos (phi * 0.5) * sin (theta * 0.5) * sin (psi * 0.5)
 
-        qy : Float
-        qy =
-            cos (phi * 0.5) * sin (theta * 0.5) * cos (psi * 0.5) + sin (phi * 0.5) * cos (theta * 0.5) * sin (psi * 0.5)
+yRotation : Float -> Quaternion
+yRotation angle =
+    new (cos (0.5 * angle)) 0 (sin (0.5 * angle)) 0
 
-        qz : Float
-        qz =
-            cos (phi * 0.5) * cos (theta * 0.5) * sin (psi * 0.5) - sin (phi * 0.5) * sin (theta * 0.5) * cos (psi * 0.5)
-    in
-    new qw qx qy qz
+
+zRotation : Float -> Quaternion
+zRotation angle =
+    new (cos (0.5 * angle)) 0 0 (sin (0.5 * angle))
 
 
 
+-- fromEulerAngles : Float -> Float -> Float -> Quaternion
+-- fromEulerAngles phi theta psi =
+--     let
+--         qw : Float
+--         qw =
+--             cos (phi * 0.5) * cos (theta * 0.5) * cos (psi * 0.5) + sin (phi * 0.5) * sin (theta * 0.5) * sin (psi * 0.5)
+--         qx : Float
+--         qx =
+--             sin (phi * 0.5) * cos (theta * 0.5) * cos (psi * 0.5) - cos (phi * 0.5) * sin (theta * 0.5) * sin (psi * 0.5)
+--         qy : Float
+--         qy =
+--             cos (phi * 0.5) * sin (theta * 0.5) * cos (psi * 0.5) + sin (phi * 0.5) * cos (theta * 0.5) * sin (psi * 0.5)
+--         qz : Float
+--         qz =
+--             cos (phi * 0.5) * cos (theta * 0.5) * sin (psi * 0.5) - sin (phi * 0.5) * sin (theta * 0.5) * cos (psi * 0.5)
+--     in
+--     new qw qx qy qz
 -- OPERATIONS
 
 
@@ -103,6 +115,10 @@ multiply p q =
             |> Vector.add (Vector.scale p.scalar q.vector)
             |> Vector.add (Vector.cross p.vector q.vector)
     }
+
+
+
+-- TO EULER
 
 
 xToEuler : Quaternion -> Float

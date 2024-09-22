@@ -10,9 +10,6 @@ module Engine.Rigidbody exposing
     , translate
     , translateRelative
     , velocity
-    , xRotation
-    , yRotation
-    , zRotation
     )
 
 import Engine.Quaternion as Quaternion exposing (Quaternion)
@@ -119,24 +116,3 @@ vectorMultiply : Quaternion -> Vector -> Vector
 vectorMultiply quaternion vector =
     Quaternion.multiply (Quaternion.multiply quaternion (Quaternion 0 vector)) (Quaternion.inverse quaternion)
         |> .vector
-
-
-{-| New quaternion rotated by radian angle on x axis
--}
-xRotation : Float -> Quaternion
-xRotation angle =
-    Quaternion.fromEulerAngles angle 0 0
-
-
-{-| New quaternion rotated by radian angle on y axis
--}
-yRotation : Float -> Quaternion
-yRotation angle =
-    Quaternion.fromEulerAngles 0 angle 0
-
-
-{-| New quaternion rotated by radian angle on z axis
--}
-zRotation : Float -> Quaternion
-zRotation angle =
-    Quaternion.fromEulerAngles 0 0 angle

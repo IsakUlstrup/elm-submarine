@@ -45,8 +45,8 @@ import Timing exposing (Timing)
 rotation : Float -> Controls -> Rigidbody -> Rigidbody
 rotation dt controls rigidbody =
     rigidbody
-        |> Rigidbody.rotate (Rigidbody.xRotation (controls.rudderPitch * dt * 0.1 |> degrees))
-        |> Rigidbody.rotate (Rigidbody.yRotation (controls.rudderYaw * dt * 0.1 |> degrees))
+        |> Rigidbody.rotate (Quaternion.xRotation (controls.rudderPitch * dt * 0.1 |> degrees))
+        |> Rigidbody.rotate (Quaternion.yRotation (controls.rudderYaw * dt * 0.1 |> degrees))
 
 
 movement : Float -> Controls -> Rigidbody -> Rigidbody
