@@ -4,7 +4,7 @@ import Browser
 import Browser.Events
 import Controls exposing (Controls)
 import Dict exposing (Dict)
-import Engine.Quaternion as Quaternion
+import Engine.Quaternion as Quaternion exposing (Quaternion)
 import Engine.Rigidbody as Rigidbody exposing (Rigidbody)
 import Engine.Vector as Vector exposing (Vector)
 import Html exposing (Html, main_)
@@ -67,6 +67,7 @@ type Module
     | ThrottleButtons
     | StateDump
     | RigidBodyDebug
+    | QuaternionDump
 
 
 
@@ -94,6 +95,7 @@ init _ =
         , ThrottleButtons
         , StateDump
         , RigidBodyDebug
+        , QuaternionDump
         ]
         (Controls.new 1 0.1)
         0
@@ -435,6 +437,16 @@ viewStateDump rigidbody =
         ]
 
 
+viewQuaternionDump : Quaternion -> Html msg
+viewQuaternionDump quaternion =
+    Html.div []
+        [ Html.p [] [ Html.text "scalar: ", Html.text (prettyFloat quaternion.scalar) ]
+        , Html.p [] [ Html.text "x: ", Html.text (prettyFloat quaternion.vector.x) ]
+        , Html.p [] [ Html.text "y: ", Html.text (prettyFloat quaternion.vector.y) ]
+        , Html.p [] [ Html.text "z: ", Html.text (prettyFloat quaternion.vector.z) ]
+        ]
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -455,6 +467,9 @@ view model =
 
                 RigidBodyDebug ->
                     viewPhysicsDebug model.particle
+
+                QuaternionDump ->
+                    viewQuaternionDump model.particle.orientation
     in
     main_ [ Html.Attributes.id "app" ]
         (List.map viewModule model.modules)
