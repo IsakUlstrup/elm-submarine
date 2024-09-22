@@ -1,14 +1,16 @@
 module Engine.Quaternion exposing
     ( Quaternion
-    , fromEuler
     , identity
     , inverse
     , magnitude
     , multiply
     , new
     , normalize
+    , xRotation
     , xToEuler
+    , yRotation
     , yToEuler
+    , zRotation
     , zToEuler
     )
 
@@ -35,8 +37,27 @@ new scalar x y z =
     Quaternion scalar (Vector.new x y z)
 
 
+xRotation : Float -> Quaternion
+xRotation angle =
+    new (cos (0.5 * angle)) (sin (0.5 * angle)) 0 0
+
+
+{-| Create a quaternion corresponding to a rotation about the y axis by the given angle.
+-}
+yRotation : Float -> Quaternion
+yRotation angle =
+    new (cos (0.5 * angle)) 0 (sin (0.5 * angle)) 0
+
+
+{-| Create a quaternion corresponding to a rotation about the z axis by the given angle.
+-}
+zRotation : Float -> Quaternion
+zRotation angle =
+    new (cos (0.5 * angle)) 0 0 (sin (0.5 * angle))
+
+
 fromEuler : Float -> Float -> Float -> Quaternion
-fromEuler z x y =
+fromEuler x y z =
     let
         cr =
             cos (z * 0.5)
