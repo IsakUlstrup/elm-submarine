@@ -1,16 +1,14 @@
 module Engine.Quaternion exposing
     ( Quaternion
-    , fromVector3
+    , fromEuler
     , identity
     , inverse
     , magnitude
     , multiply
+    , new
     , normalize
-    , xRotation
     , xToEuler
-    , yRotation
     , yToEuler
-    , zRotation
     , zToEuler
     )
 
@@ -37,24 +35,32 @@ new scalar x y z =
     Quaternion scalar (Vector.new x y z)
 
 
-fromVector3 : Vector -> Quaternion
-fromVector3 vector =
-    Quaternion 0 vector
+fromEuler : Float -> Float -> Float -> Quaternion
+fromEuler z x y =
+    let
+        cr =
+            cos (z * 0.5)
 
+        sr =
+            sin (z * 0.5)
 
-xRotation : Float -> Quaternion
-xRotation angle =
-    new (cos (0.5 * angle)) (sin (0.5 * angle)) 0 0
+        cp =
+            cos (x * 0.5)
 
+        sp =
+            sin (x * 0.5)
 
-yRotation : Float -> Quaternion
-yRotation angle =
-    new (cos (0.5 * angle)) 0 (sin (0.5 * angle)) 0
+        cy =
+            cos (y * 0.5)
 
-
-zRotation : Float -> Quaternion
-zRotation angle =
-    new (cos (0.5 * angle)) 0 0 (sin (0.5 * angle))
+        sy =
+            sin (y * 0.5)
+    in
+    new
+        (cr * cp * cy + sr * sp * sy)
+        (sr * cp * cy - cr * sp * sy)
+        (cr * sp * cy + sr * cp * sy)
+        (cr * cp * sy - sr * sp * cy)
 
 
 
@@ -104,8 +110,8 @@ multiply p q =
 -- TO EULER
 
 
-xToEuler : Quaternion -> Float
-xToEuler quaternion =
+yToEuler : Quaternion -> Float
+yToEuler quaternion =
     let
         sinp =
             sqrt (1 + 2 * (quaternion.scalar * quaternion.vector.y - quaternion.vector.x * quaternion.vector.z))
@@ -116,8 +122,8 @@ xToEuler quaternion =
     2 * atan2 sinp cosp - pi / 2
 
 
-yToEuler : Quaternion -> Float
-yToEuler quaternion =
+zToEuler : Quaternion -> Float
+zToEuler quaternion =
     let
         siny_cosp =
             2 * (quaternion.scalar * quaternion.vector.z + quaternion.vector.x * quaternion.vector.y)
@@ -128,8 +134,8 @@ yToEuler quaternion =
     atan2 siny_cosp cosy_cosp
 
 
-zToEuler : Quaternion -> Float
-zToEuler quaternion =
+xToEuler : Quaternion -> Float
+xToEuler quaternion =
     let
         sinr_cosp =
             2 * (quaternion.scalar * quaternion.vector.x + quaternion.vector.y * quaternion.vector.z)

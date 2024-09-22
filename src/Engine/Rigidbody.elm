@@ -5,7 +5,6 @@ module Engine.Rigidbody exposing
     , rotate
     , setMass
     , setOrientation
-    , setPosition
     , step
     , translate
     , translateRelative
@@ -16,7 +15,7 @@ import Engine.Quaternion as Quaternion exposing (Quaternion)
 import Engine.Vector as Vector exposing (Vector)
 
 
-{-| A particle meant to be used with Verlet integration
+{-| A rigid body meant to be used with Verlet integration
 -}
 type alias Rigidbody =
     { position : Vector
@@ -74,24 +73,11 @@ step dt body =
     }
 
 
-setPosition : Vector -> Rigidbody -> Rigidbody
-setPosition position body =
-    { body
-        | position = position
-        , oldPosition = Vector.subtract (velocity body) position
-    }
-
-
 translate : Vector -> Rigidbody -> Rigidbody
 translate vector body =
     { body
         | position = Vector.add body.position vector
     }
-
-
-rotate : Quaternion -> Rigidbody -> Rigidbody
-rotate quaternion body =
-    { body | orientation = Quaternion.multiply quaternion body.orientation }
 
 
 translateRelative : Vector -> Rigidbody -> Rigidbody
@@ -105,6 +91,11 @@ translateRelative vector body =
         | position = Vector.add body.position rotatedVector
         , oldPosition = Vector.add body.position rotatedVector
     }
+
+
+rotate : Quaternion -> Rigidbody -> Rigidbody
+rotate quaternion body =
+    { body | orientation = Quaternion.multiply quaternion body.orientation }
 
 
 setOrientation : Quaternion -> Rigidbody -> Rigidbody
