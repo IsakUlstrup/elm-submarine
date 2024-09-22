@@ -40,6 +40,7 @@ type Module
     | StateDump
     | RigidBodyDebug
     | QuaternionDump
+    | OrientationDisplay
 
 
 
@@ -65,6 +66,7 @@ init _ =
         , StateDump
         , RigidBodyDebug
         , QuaternionDump
+        , OrientationDisplay
         ]
         (Controls.new 1 0.1)
         0
@@ -404,6 +406,67 @@ viewQuaternionDump quaternion =
         ]
 
 
+viewOrientationGrid : Quaternion -> Svg msg
+viewOrientationGrid quaternion =
+    let
+        verticalLine : Int -> Svg msg
+        verticalLine x =
+            Svg.line
+                [ Svg.Attributes.x1 (String.fromInt x)
+                , Svg.Attributes.y1 "-500"
+                , Svg.Attributes.x2 (String.fromInt x)
+                , Svg.Attributes.y2 "500"
+                ]
+                []
+
+        horizontalLine : Int -> Svg msg
+        horizontalLine y =
+            Svg.line
+                [ Svg.Attributes.x1 "-500"
+                , Svg.Attributes.y1 (String.fromInt y)
+                , Svg.Attributes.x2 "500"
+                , Svg.Attributes.y2 (String.fromInt y)
+                ]
+                []
+
+        spacing : Int
+        spacing =
+            150
+    in
+    Svg.g
+        [ Svg.Attributes.stroke "#262626"
+        , Svg.Attributes.transform
+            ("translate("
+                ++ String.fromInt -(modBy spacing (round (Quaternion.yToEuler quaternion * 180 / pi)))
+                ++ ", "
+                ++ String.fromInt -(modBy spacing (round (Quaternion.xToEuler quaternion * 180 / pi)))
+                ++ ")"
+            )
+        ]
+        (List.range -2 2
+            |> List.concatMap
+                (\i ->
+                    [ verticalLine (i * spacing)
+                    , horizontalLine (i * spacing)
+                    ]
+                )
+        )
+
+
+viewOrientationDisplay : Rigidbody -> Svg msg
+viewOrientationDisplay rigidbody =
+    Html.div []
+        [ Svg.svg
+            [ Svg.Attributes.viewBox "-250 -250 500 500"
+            , Svg.Attributes.class "orientation-display"
+            ]
+            [ Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat (Quaternion.zToEuler rigidbody.orientation) ++ ")") ]
+                [ viewOrientationGrid rigidbody.orientation
+                ]
+            ]
+        ]
+
+
 view : Model -> Html Msg
 view model =
     let
@@ -427,6 +490,9 @@ view model =
 
                 QuaternionDump ->
                     viewQuaternionDump model.particle.orientation
+
+                OrientationDisplay ->
+                    viewOrientationDisplay model.particle
     in
     main_ [ Html.Attributes.id "app" ]
         (List.map viewModule model.modules)
