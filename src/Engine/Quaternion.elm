@@ -58,23 +58,6 @@ zRotation angle =
 
 
 
--- fromEulerAngles : Float -> Float -> Float -> Quaternion
--- fromEulerAngles phi theta psi =
---     let
---         qw : Float
---         qw =
---             cos (phi * 0.5) * cos (theta * 0.5) * cos (psi * 0.5) + sin (phi * 0.5) * sin (theta * 0.5) * sin (psi * 0.5)
---         qx : Float
---         qx =
---             sin (phi * 0.5) * cos (theta * 0.5) * cos (psi * 0.5) - cos (phi * 0.5) * sin (theta * 0.5) * sin (psi * 0.5)
---         qy : Float
---         qy =
---             cos (phi * 0.5) * sin (theta * 0.5) * cos (psi * 0.5) + sin (phi * 0.5) * cos (theta * 0.5) * sin (psi * 0.5)
---         qz : Float
---         qz =
---             cos (phi * 0.5) * cos (theta * 0.5) * sin (psi * 0.5) - sin (phi * 0.5) * sin (theta * 0.5) * cos (psi * 0.5)
---     in
---     new qw qx qy qz
 -- OPERATIONS
 
 

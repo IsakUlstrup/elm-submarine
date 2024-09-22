@@ -258,22 +258,20 @@ prettyFloat n =
 
 viewPhysicsDebug : Rigidbody -> Html msg
 viewPhysicsDebug rigidbody =
-    let
-        _ =
-            (Quaternion.yToEuler rigidbody.orientation * 180)
-                / pi
-                |> Debug.log "rotation"
-    in
     Html.div []
         [ Svg.svg
             [ Svg.Attributes.viewBox "-250 -250 500 500"
             , Svg.Attributes.class "movement-debug"
-
-            -- flip svg y axis so we can use cartesian coordinates
-            --, Svg.Attributes.transform "matrix(1 0 0 -1 0 0)"
             ]
             [ viewGrid rigidbody.position
-            , Svg.g [ Svg.Attributes.strokeWidth "7", Svg.Attributes.transform ("rotate(" ++ String.fromFloat ((Quaternion.yToEuler rigidbody.orientation * 180) / pi) ++ ")") ]
+            , Svg.g
+                [ Svg.Attributes.strokeWidth "7"
+                , Svg.Attributes.transform
+                    ("rotate("
+                        ++ String.fromFloat ((Quaternion.yToEuler rigidbody.orientation * 180) / pi)
+                        ++ ")"
+                    )
+                ]
                 [ Svg.line
                     [ Svg.Attributes.x1 "0"
                     , Svg.Attributes.y1 "0"
