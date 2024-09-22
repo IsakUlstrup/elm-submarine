@@ -221,7 +221,7 @@ viewPhysicsDebug rigidbody =
                 [ Svg.Attributes.strokeWidth "7"
                 , Svg.Attributes.transform
                     ("rotate("
-                        ++ String.fromFloat ((Quaternion.yToEulerAlt rigidbody.orientation * -180) / pi)
+                        ++ String.fromFloat ((Quaternion.yToEuler rigidbody.orientation * -180) / pi)
                         ++ ")"
                     )
                 ]

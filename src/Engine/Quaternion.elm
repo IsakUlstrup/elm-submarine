@@ -10,7 +10,6 @@ module Engine.Quaternion exposing
     , xToEuler
     , yRotation
     , yToEuler
-    , yToEulerAlt
     , zRotation
     , zToEuler
     )
@@ -106,18 +105,6 @@ multiply p q =
 
 yToEuler : Quaternion -> Float
 yToEuler quaternion =
-    let
-        sinp =
-            sqrt (1 + 2 * (quaternion.scalar * quaternion.vector.y - quaternion.vector.x * quaternion.vector.z))
-
-        cosp =
-            sqrt (1 - 2 * (quaternion.scalar * quaternion.vector.y - quaternion.vector.x * quaternion.vector.z))
-    in
-    2 * atan2 sinp cosp - pi / 2
-
-
-yToEulerAlt : Quaternion -> Float
-yToEulerAlt quaternion =
     let
         fTx =
             2 * quaternion.vector.x
