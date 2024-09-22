@@ -452,15 +452,16 @@ viewOrientationDisplay rigidbody =
             , Svg.Attributes.class "orientation-display"
             ]
             [ Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat roll ++ ")") ]
-                (List.range -6 6 |> List.map (\n -> toFloat (n * 30)) |> List.map viewHorizontalLine)
-            , Svg.line
-                [ Svg.Attributes.x1 "-250"
-                , Svg.Attributes.x2 "250"
-                , Svg.Attributes.y1 "0"
-                , Svg.Attributes.y2 "0"
-                , Svg.Attributes.stroke "black"
-                ]
-                []
+                (Svg.line
+                    [ Svg.Attributes.x1 "-250"
+                    , Svg.Attributes.x2 "250"
+                    , Svg.Attributes.y1 "0"
+                    , Svg.Attributes.y2 "0"
+                    , Svg.Attributes.stroke "black"
+                    ]
+                    []
+                    :: (List.range -6 6 |> List.map (\n -> toFloat (n * 30)) |> List.map viewHorizontalLine)
+                )
             ]
         ]
 
