@@ -406,63 +406,61 @@ viewQuaternionDump quaternion =
         ]
 
 
-viewOrientationGrid : Quaternion -> Svg msg
-viewOrientationGrid quaternion =
-    let
-        verticalLine : Int -> Svg msg
-        verticalLine x =
-            Svg.line
-                [ Svg.Attributes.x1 (String.fromInt x)
-                , Svg.Attributes.y1 "-500"
-                , Svg.Attributes.x2 (String.fromInt x)
-                , Svg.Attributes.y2 "500"
-                ]
-                []
-
-        horizontalLine : Int -> Svg msg
-        horizontalLine y =
-            Svg.line
-                [ Svg.Attributes.x1 "-500"
-                , Svg.Attributes.y1 (String.fromInt y)
-                , Svg.Attributes.x2 "500"
-                , Svg.Attributes.y2 (String.fromInt y)
-                ]
-                []
-
-        spacing : Int
-        spacing =
-            150
-    in
-    Svg.g
-        [ Svg.Attributes.stroke "#262626"
-        , Svg.Attributes.transform
-            ("translate("
-                ++ String.fromInt -(modBy spacing (round (Quaternion.yToEuler quaternion * 180 / pi)))
-                ++ ", "
-                ++ String.fromInt -(modBy spacing (round (Quaternion.xToEuler quaternion * 180 / pi)))
-                ++ ")"
-            )
-        ]
-        (List.range -2 2
-            |> List.concatMap
-                (\i ->
-                    [ verticalLine (i * spacing)
-                    , horizontalLine (i * spacing)
-                    ]
-                )
-        )
-
-
 viewOrientationDisplay : Rigidbody -> Svg msg
 viewOrientationDisplay rigidbody =
+    let
+        pitch =
+            rigidbody.orientation
+                |> Quaternion.xToEuler
+                |> radToDegrees
+
+        roll =
+            rigidbody.orientation
+                |> Quaternion.zToEuler
+                |> radToDegrees
+
+        viewHorizontalLine i =
+            Svg.g [ Svg.Attributes.transform ("translate(0, " ++ ((pitch * 3) - i * 3 |> String.fromFloat) ++ ")") ]
+                [ Svg.line
+                    [ Svg.Attributes.x1 "-250"
+                    , Svg.Attributes.x2 "250"
+                    , Svg.Attributes.y1 "0"
+                    , Svg.Attributes.y2 "0"
+                    , Svg.Attributes.stroke
+                        (if i > 0 then
+                            "blue"
+
+                         else if i < 0 then
+                            "orange"
+
+                         else
+                            "black"
+                        )
+                    ]
+                    []
+                , Svg.text_
+                    [ Svg.Attributes.fontSize "1.5rem"
+                    , Svg.Attributes.textAnchor "middle"
+                    , Svg.Attributes.y "-5"
+                    ]
+                    [ Svg.text (String.fromFloat i) ]
+                ]
+    in
     Html.div []
         [ Svg.svg
             [ Svg.Attributes.viewBox "-250 -250 500 500"
             , Svg.Attributes.class "orientation-display"
             ]
-            [ Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat (Quaternion.zToEuler rigidbody.orientation) ++ ")") ]
-                [ viewOrientationGrid rigidbody.orientation
+            [ Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat roll ++ ")") ]
+                (List.range -6 6 |> List.map (\n -> toFloat (n * 30)) |> List.map viewHorizontalLine)
+            , Svg.line
+                [ Svg.Attributes.x1 "-250"
+                , Svg.Attributes.x2 "250"
+                , Svg.Attributes.y1 "0"
+                , Svg.Attributes.y2 "0"
+                , Svg.Attributes.stroke "black"
                 ]
+                []
             ]
         ]
 
