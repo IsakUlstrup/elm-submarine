@@ -10,6 +10,7 @@ module Engine.Quaternion exposing
     , xToEuler
     , yRotation
     , yToEuler
+    , yToEulerAlt
     , zRotation
     , zToEuler
     )
@@ -113,6 +114,33 @@ yToEuler quaternion =
             sqrt (1 - 2 * (quaternion.scalar * quaternion.vector.y - quaternion.vector.x * quaternion.vector.z))
     in
     2 * atan2 sinp cosp - pi / 2
+
+
+yToEulerAlt : Quaternion -> Float
+yToEulerAlt quaternion =
+    let
+        fTx =
+            2 * quaternion.vector.x
+
+        fTy =
+            2 * quaternion.vector.y
+
+        fTz =
+            2 * quaternion.vector.z
+
+        fTwy =
+            fTy * quaternion.scalar
+
+        fTxx =
+            fTx * quaternion.vector.x
+
+        fTxz =
+            fTz * quaternion.vector.x
+
+        fTyy =
+            fTy * quaternion.vector.y
+    in
+    atan2 (fTxz + fTwy) (1.0 - (fTxx + fTyy))
 
 
 zToEuler : Quaternion -> Float
