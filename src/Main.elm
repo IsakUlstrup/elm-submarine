@@ -67,7 +67,6 @@ init _ =
         , RudderRollInput
         , ThrottleButtons
         , StateDump
-        , RigidBodyDebug
         , QuaternionDump
         , OrientationDisplay
         ]

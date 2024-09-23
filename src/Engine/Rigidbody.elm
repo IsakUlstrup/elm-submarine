@@ -3,6 +3,7 @@ module Engine.Rigidbody exposing
     , applyForce
     , new
     , rotate
+    , rotateGlobal
     , setMass
     , step
     , translateRelative
@@ -87,6 +88,11 @@ translateRelative vector body =
 rotate : Quaternion -> Rigidbody -> Rigidbody
 rotate quaternion body =
     { body | orientation = Quaternion.multiply body.orientation quaternion }
+
+
+rotateGlobal : Quaternion -> Rigidbody -> Rigidbody
+rotateGlobal quaternion body =
+    { body | orientation = Quaternion.multiply quaternion body.orientation }
 
 
 vectorMultiply : Quaternion -> Vector -> Vector
