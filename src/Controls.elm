@@ -2,6 +2,7 @@ module Controls exposing
     ( Controls
     , new
     , setRudderPitch
+    , setRudderRoll
     , setRudderYaw
     , setThrottle
     )
@@ -11,6 +12,7 @@ type alias Controls =
     { throttle : Float
     , rudderYaw : Float
     , rudderPitch : Float
+    , rudderRoll : Float
     , rudderSize : Float
     , enginePower : Float
     }
@@ -18,7 +20,7 @@ type alias Controls =
 
 new : Float -> Float -> Controls
 new rudderSize enginePower =
-    Controls 0 0 0 rudderSize enginePower
+    Controls 0 0 0 0 rudderSize enginePower
 
 
 
@@ -57,3 +59,8 @@ setRudderYaw r submarine =
 setRudderPitch : Float -> Controls -> Controls
 setRudderPitch r submarine =
     { submarine | rudderPitch = r |> clamp -1 1 }
+
+
+setRudderRoll : Float -> Controls -> Controls
+setRudderRoll r submarine =
+    { submarine | rudderRoll = r |> clamp -1 1 }

@@ -4,9 +4,7 @@ module Engine.Rigidbody exposing
     , new
     , rotate
     , setMass
-    , setOrientation
     , step
-    , translate
     , translateRelative
     , velocity
     )
@@ -73,13 +71,6 @@ step dt body =
     }
 
 
-translate : Vector -> Rigidbody -> Rigidbody
-translate vector body =
-    { body
-        | position = Vector.add body.position vector
-    }
-
-
 translateRelative : Vector -> Rigidbody -> Rigidbody
 translateRelative vector body =
     let
@@ -95,12 +86,7 @@ translateRelative vector body =
 
 rotate : Quaternion -> Rigidbody -> Rigidbody
 rotate quaternion body =
-    { body | orientation = Quaternion.multiply quaternion body.orientation }
-
-
-setOrientation : Quaternion -> Rigidbody -> Rigidbody
-setOrientation matrix body =
-    { body | orientation = matrix }
+    { body | orientation = Quaternion.multiply body.orientation quaternion }
 
 
 vectorMultiply : Quaternion -> Vector -> Vector

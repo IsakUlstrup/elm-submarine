@@ -21,6 +21,7 @@ rotation dt controls rigidbody =
     rigidbody
         |> Rigidbody.rotate (Quaternion.xRotation (controls.rudderPitch * dt * 0.1 |> degrees))
         |> Rigidbody.rotate (Quaternion.yRotation (controls.rudderYaw * dt * 0.1 |> degrees))
+        |> Rigidbody.rotate (Quaternion.zRotation (controls.rudderRoll * dt * 0.1 |> degrees))
 
 
 movement : Float -> Controls -> Rigidbody -> Rigidbody
@@ -36,6 +37,7 @@ movement dt controls rigidbody =
 type Module
     = RudderPitchInput
     | RudderYawInput
+    | RudderRollInput
     | ThrottleButtons
     | StateDump
     | RigidBodyDebug
@@ -62,6 +64,7 @@ init _ =
         (Rigidbody.new Vector.zero 2000)
         [ RudderPitchInput
         , RudderYawInput
+        , RudderRollInput
         , ThrottleButtons
         , StateDump
         , RigidBodyDebug
@@ -75,6 +78,8 @@ init _ =
             , ( "s", ( SteeringPitchInput -1, SteeringPitchInput 0 ) )
             , ( "a", ( SteeringYawInput -1, SteeringYawInput 0 ) )
             , ( "d", ( SteeringYawInput 1, SteeringYawInput 0 ) )
+            , ( "q", ( SteeringRollInput -1, SteeringRollInput 0 ) )
+            , ( "e", ( SteeringRollInput 1, SteeringRollInput 0 ) )
             ]
         )
     , Cmd.none
@@ -89,6 +94,7 @@ type Msg
     = Tick Float
     | SteeringPitchInput Float
     | SteeringYawInput Float
+    | SteeringRollInput Float
     | ThrottleInput Float
 
 
@@ -122,6 +128,11 @@ update msg model =
 
         SteeringYawInput input ->
             ( { model | controls = Controls.setRudderYaw input model.controls }
+            , Cmd.none
+            )
+
+        SteeringRollInput input ->
+            ( { model | controls = Controls.setRudderRoll input model.controls }
             , Cmd.none
             )
 
@@ -477,6 +488,9 @@ view model =
 
                 RudderYawInput ->
                     viewRudderButtons "Yaw" SteeringYawInput model.controls
+
+                RudderRollInput ->
+                    viewRudderButtons "Roll" SteeringRollInput model.controls
 
                 ThrottleButtons ->
                     viewThrottleButtons model.controls
