@@ -425,6 +425,11 @@ viewOrientationDisplay rigidbody =
                 |> Quaternion.xToEuler
                 |> radToDegrees
 
+        yaw =
+            rigidbody.orientation
+                |> Quaternion.yToEuler
+                |> radToDegrees
+
         roll =
             rigidbody.orientation
                 |> Quaternion.zToEuler
@@ -456,6 +461,24 @@ viewOrientationDisplay rigidbody =
                     ]
                     [ Svg.text (String.fromFloat i) ]
                 ]
+
+        viewVerticalLine i =
+            Svg.g [ Svg.Attributes.transform ("translate(" ++ ((yaw * 3) - i * 3 |> String.fromFloat) ++ ", 0)") ]
+                [ Svg.line
+                    [ Svg.Attributes.x1 "0"
+                    , Svg.Attributes.x2 "0"
+                    , Svg.Attributes.y1 "-250"
+                    , Svg.Attributes.y2 "250"
+                    , Svg.Attributes.stroke "black"
+                    ]
+                    []
+                , Svg.text_
+                    [ Svg.Attributes.fontSize "1.5rem"
+                    , Svg.Attributes.textAnchor "middle"
+                    , Svg.Attributes.y "-5"
+                    ]
+                    [ Svg.text (String.fromFloat i) ]
+                ]
     in
     Html.div []
         [ Svg.svg
@@ -463,16 +486,17 @@ viewOrientationDisplay rigidbody =
             , Svg.Attributes.class "orientation-display"
             ]
             [ Svg.g [ Svg.Attributes.transform ("rotate(" ++ String.fromFloat roll ++ ")") ]
-                (Svg.line
-                    [ Svg.Attributes.x1 "-250"
-                    , Svg.Attributes.x2 "250"
-                    , Svg.Attributes.y1 "0"
-                    , Svg.Attributes.y2 "0"
+                [ Svg.circle
+                    [ Svg.Attributes.cx "0"
+                    , Svg.Attributes.cy "0"
+                    , Svg.Attributes.r "40"
+                    , Svg.Attributes.fill "none"
                     , Svg.Attributes.stroke "black"
                     ]
                     []
-                    :: (List.range -6 6 |> List.map (\n -> toFloat (n * 30)) |> List.map viewHorizontalLine)
-                )
+                , Svg.g [] (List.range -6 6 |> List.map (\n -> toFloat (n * 30)) |> List.map viewHorizontalLine)
+                , Svg.g [] (List.range -6 6 |> List.map (\n -> toFloat (n * 30)) |> List.map viewVerticalLine)
+                ]
             ]
         ]
 
