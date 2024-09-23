@@ -75,8 +75,8 @@ init _ =
         (Dict.fromList
             [ ( "w", ( SteeringPitchInput 1, SteeringPitchInput 0 ) )
             , ( "s", ( SteeringPitchInput -1, SteeringPitchInput 0 ) )
-            , ( "a", ( SteeringYawInput -1, SteeringYawInput 0 ) )
-            , ( "d", ( SteeringYawInput 1, SteeringYawInput 0 ) )
+            , ( "a", ( SteeringYawInput 1, SteeringYawInput 0 ) )
+            , ( "d", ( SteeringYawInput -1, SteeringYawInput 0 ) )
             , ( "q", ( SteeringRollInput -1, SteeringRollInput 0 ) )
             , ( "e", ( SteeringRollInput 1, SteeringRollInput 0 ) )
             ]
