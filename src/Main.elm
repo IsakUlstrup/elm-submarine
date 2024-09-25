@@ -25,13 +25,14 @@ rotation dt controls orientation =
         |> Orientation.roll (controls.rudderRoll * dt * 0.1)
 
 
+movement : Controls -> Orientation -> Rigidbody -> Rigidbody
+movement controls orientation rigidbody =
+    rigidbody
+        |> Rigidbody.applyForce (Vector.scale (controls.throttle * controls.enginePower) (Orientation.toVector orientation))
 
--- |> Rigidbody.rotate (Quaternion.yRotation (controls.rudderYaw * dt * 0.1 |> degrees))
--- |> Rigidbody.rotate (Quaternion.zRotation (controls.rudderRoll * dt * 0.1 |> degrees))
--- movement : Float -> Controls -> Rigidbody -> Rigidbody
--- movement dt controls rigidbody =
---     rigidbody
---         |> Rigidbody.translateRelative (Vector.back |> Vector.scale -(controls.throttle * controls.enginePower * dt))
+
+
+-- (Vector.back |> Vector.scale -(controls.throttle * controls.enginePower * dt))
 -- MODULE
 
 
@@ -116,13 +117,20 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Tick dt ->
-            let
-                ( newTiming, newParticle ) =
-                    Timing.fixedUpdate (physicsUpdate model.controls) dt ( model.timing, model.orientation )
-            in
+            -- let
+            --     ( newTiming, newParticle ) =
+            --         Timing.fixedUpdate (physicsUpdate model.controls) dt ( model.timing, model.orientation )
+            -- in
             ( { model
-                | orientation = newParticle
-                , timing = newTiming
+                | orientation =
+                    model.orientation
+                        |> rotation dt model.controls
+                , particle =
+                    model.particle
+                        |> movement model.controls model.orientation
+                        |> Rigidbody.step dt
+
+                -- , timing = newTiming
               }
             , Cmd.none
             )
@@ -500,7 +508,14 @@ viewOrientationDisplay orientation =
                 , Svg.g [] (List.range 0 12 |> List.map (\n -> toFloat (n * 30)) |> List.map viewVerticalLine)
                 ]
             ]
+        , Html.p [] [ Html.text (Orientation.toVector orientation |> Debug.toString) ]
         ]
+
+
+
+-- x = cos(yaw)cos(pitch)
+-- y = sin(yaw)cos(pitch)
+-- z = sin(pitch)
 
 
 view : Model -> Html Msg

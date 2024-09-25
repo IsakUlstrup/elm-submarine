@@ -5,9 +5,12 @@ module Engine.Orientation exposing
     , pitchAngle
     , roll
     , rollAngle
+    , toVector
     , yaw
     , yawAngle
     )
+
+import Engine.Vector as Vector exposing (Vector)
 
 
 type alias Orientation =
@@ -50,6 +53,18 @@ yawAngle orientation =
 rollAngle : Orientation -> Float
 rollAngle orientation =
     toDegrees orientation.roll
+
+
+toVector : Orientation -> Vector
+toVector orientation =
+    let
+        p =
+            toFloat orientation.pitch
+
+        y =
+            toFloat orientation.yaw
+    in
+    Vector.new (sin y) -(sin p * cos y) -(cos p * cos y)
 
 
 
@@ -98,6 +113,11 @@ addAngle (Radian r1) (Radian r2) =
 -- from degrees: a / 180
 -- to degrees: r * 180
 -- to rad: r * pi
+
+
+toFloat : Radian -> Float
+toFloat (Radian rad) =
+    rad
 
 
 toDegrees : Radian -> Float
