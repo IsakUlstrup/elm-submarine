@@ -59,10 +59,10 @@ toVector : Orientation -> Vector
 toVector orientation =
     let
         p =
-            toFloat orientation.pitch
+            toRadian orientation.pitch
 
         y =
-            toFloat orientation.yaw
+            toRadian orientation.yaw
     in
     Vector.new (sin y) -(sin p * cos y) -(cos p * cos y)
 
@@ -115,9 +115,9 @@ addAngle (Radian r1) (Radian r2) =
 -- to rad: r * pi
 
 
-toFloat : Radian -> Float
-toFloat (Radian rad) =
-    rad
+toRadian : Radian -> Float
+toRadian (Radian radian) =
+    radian * pi
 
 
 toDegrees : Radian -> Float
