@@ -4,6 +4,7 @@ import Browser
 import Browser.Events
 import Controls exposing (Controls)
 import Dict exposing (Dict)
+import Engine.Orientation as Orientation exposing (Orientation)
 import Engine.Quaternion as Quaternion exposing (Quaternion)
 import Engine.Rigidbody as Rigidbody exposing (Rigidbody)
 import Engine.Vector as Vector exposing (Vector)
@@ -16,21 +17,21 @@ import Svg.Attributes
 import Timing exposing (Timing)
 
 
-rotation : Float -> Controls -> Rigidbody -> Rigidbody
-rotation dt controls rigidbody =
-    rigidbody
-        |> Rigidbody.rotate (Quaternion.xRotation (controls.rudderPitch * dt * 0.1 |> degrees))
-        |> Rigidbody.rotate (Quaternion.yRotation (controls.rudderYaw * dt * 0.1 |> degrees))
-        |> Rigidbody.rotate (Quaternion.zRotation (controls.rudderRoll * dt * 0.1 |> degrees))
-
-
-movement : Float -> Controls -> Rigidbody -> Rigidbody
-movement dt controls rigidbody =
-    rigidbody
-        |> Rigidbody.translateRelative (Vector.back |> Vector.scale -(controls.throttle * controls.enginePower * dt))
+rotation : Float -> Controls -> Orientation -> Orientation
+rotation dt controls orientation =
+    orientation
+        |> Orientation.pitch (controls.rudderPitch * dt * 0.1)
+        |> Orientation.yaw (controls.rudderYaw * dt * 0.1)
+        |> Orientation.roll (controls.rudderRoll * dt * 0.1)
 
 
 
+-- |> Rigidbody.rotate (Quaternion.yRotation (controls.rudderYaw * dt * 0.1 |> degrees))
+-- |> Rigidbody.rotate (Quaternion.zRotation (controls.rudderRoll * dt * 0.1 |> degrees))
+-- movement : Float -> Controls -> Rigidbody -> Rigidbody
+-- movement dt controls rigidbody =
+--     rigidbody
+--         |> Rigidbody.translateRelative (Vector.back |> Vector.scale -(controls.throttle * controls.enginePower * dt))
 -- MODULE
 
 
@@ -55,6 +56,7 @@ type alias Model =
     , controls : Controls
     , timing : Timing
     , keybinds : Dict String ( Msg, Msg )
+    , orientation : Orientation
     }
 
 
@@ -81,6 +83,7 @@ init _ =
             , ( "e", ( SteeringRollInput 1, SteeringRollInput 0 ) )
             ]
         )
+        Orientation.new
     , Cmd.none
     )
 
@@ -97,12 +100,16 @@ type Msg
     | ThrottleInput Float
 
 
-physicsUpdate : Controls -> Float -> Rigidbody -> Rigidbody
-physicsUpdate controls dt rigidbody =
-    rigidbody
-        |> Rigidbody.step dt
+physicsUpdate : Controls -> Float -> Orientation -> Orientation
+physicsUpdate controls dt orientation =
+    orientation
         |> rotation dt controls
-        |> movement dt controls
+
+
+
+-- |> Rigidbody.step dt
+-- |> rotation dt controls
+-- |> movement dt controls
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -111,10 +118,10 @@ update msg model =
         Tick dt ->
             let
                 ( newTiming, newParticle ) =
-                    Timing.fixedUpdate (physicsUpdate model.controls) dt ( model.timing, model.particle )
+                    Timing.fixedUpdate (physicsUpdate model.controls) dt ( model.timing, model.orientation )
             in
             ( { model
-                | particle = newParticle
+                | orientation = newParticle
                 , timing = newTiming
               }
             , Cmd.none
@@ -416,40 +423,36 @@ viewQuaternionDump quaternion =
         ]
 
 
-viewOrientationDisplay : Rigidbody -> Svg msg
-viewOrientationDisplay rigidbody =
+viewOrientationDisplay : Orientation -> Svg msg
+viewOrientationDisplay orientation =
     let
         pitch =
-            rigidbody.orientation
-                |> Quaternion.xToEuler
-                |> radToDegrees
+            orientation
+                |> Orientation.pitchAngle
 
         yaw =
-            rigidbody.orientation
-                |> Quaternion.yToEuler
-                |> radToDegrees
+            orientation
+                |> Orientation.yawAngle
 
         roll =
-            rigidbody.orientation
-                |> Quaternion.zToEuler
-                |> radToDegrees
+            orientation
+                |> Orientation.rollAngle
 
         viewHorizontalLine i =
             Svg.g [ Svg.Attributes.transform ("translate(0, " ++ ((pitch * 3) - i * 3 |> String.fromFloat) ++ ")") ]
                 [ Svg.line
-                    [ Svg.Attributes.x1 "-250"
-                    , Svg.Attributes.x2 "250"
+                    [ Svg.Attributes.x1 "-500"
+                    , Svg.Attributes.x2 "500"
                     , Svg.Attributes.y1 "0"
                     , Svg.Attributes.y2 "0"
                     , Svg.Attributes.stroke
-                        (if i > 0 then
+                        (if i < 6 * 30 then
                             "blue"
-
-                         else if i < 0 then
-                            "orange"
+                            --  else if i < 6 then
+                            --     "orange"
 
                          else
-                            "black"
+                            "orange"
                         )
                     ]
                     []
@@ -466,15 +469,15 @@ viewOrientationDisplay rigidbody =
                 [ Svg.line
                     [ Svg.Attributes.x1 "0"
                     , Svg.Attributes.x2 "0"
-                    , Svg.Attributes.y1 "-250"
-                    , Svg.Attributes.y2 "250"
+                    , Svg.Attributes.y1 "-25"
+                    , Svg.Attributes.y2 "25"
                     , Svg.Attributes.stroke "black"
                     ]
                     []
                 , Svg.text_
                     [ Svg.Attributes.fontSize "1.5rem"
                     , Svg.Attributes.textAnchor "middle"
-                    , Svg.Attributes.y "-5"
+                    , Svg.Attributes.dominantBaseline "central"
                     ]
                     [ Svg.text (String.fromFloat i) ]
                 ]
@@ -493,8 +496,8 @@ viewOrientationDisplay rigidbody =
                     , Svg.Attributes.stroke "black"
                     ]
                     []
-                , Svg.g [] (List.range -6 6 |> List.map (\n -> toFloat (n * 30)) |> List.map viewHorizontalLine)
-                , Svg.g [] (List.range -6 6 |> List.map (\n -> toFloat (n * 30)) |> List.map viewVerticalLine)
+                , Svg.g [] (List.range 0 12 |> List.map (\n -> toFloat (n * 30)) |> List.map viewHorizontalLine)
+                , Svg.g [] (List.range 0 12 |> List.map (\n -> toFloat (n * 30)) |> List.map viewVerticalLine)
                 ]
             ]
         ]
@@ -528,7 +531,7 @@ view model =
                     viewQuaternionDump model.particle.orientation
 
                 OrientationDisplay ->
-                    viewOrientationDisplay model.particle
+                    viewOrientationDisplay model.orientation
     in
     main_ [ Html.Attributes.id "app" ]
         (List.map viewModule model.modules)
