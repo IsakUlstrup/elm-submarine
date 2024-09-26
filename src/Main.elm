@@ -4,7 +4,6 @@ import Browser
 import Browser.Events
 import Controls exposing (Controls)
 import Dict exposing (Dict)
-import Engine.Orientation as Orientation exposing (Orientation)
 import Engine.Quaternion as Quaternion exposing (Quaternion)
 import Engine.Rigidbody as Rigidbody exposing (Rigidbody)
 import Engine.Vector as Vector exposing (Vector)
@@ -17,18 +16,18 @@ import Svg.Attributes
 import Timing exposing (Timing)
 
 
-rotation : Float -> Controls -> Orientation -> Orientation
-rotation dt controls orientation =
-    orientation
-        |> Orientation.pitch (controls.rudderPitch * dt * 0.1)
-        |> Orientation.yaw (controls.rudderYaw * dt * 0.1)
-        |> Orientation.roll (controls.rudderRoll * dt * 0.1)
-
-
-movement : Controls -> Orientation -> Rigidbody -> Rigidbody
-movement controls orientation rigidbody =
+rotation : Float -> Controls -> Rigidbody -> Rigidbody
+rotation dt controls rigidbody =
     rigidbody
-        |> Rigidbody.applyForce (Vector.scale (controls.throttle * controls.enginePower) (Orientation.toVector orientation))
+        |> Rigidbody.rotate (Quaternion.xRotation (controls.rudderPitch * dt * 0.001))
+        |> Rigidbody.rotate (Quaternion.yRotation (controls.rudderYaw * dt * 0.001))
+        |> Rigidbody.rotate (Quaternion.zRotation (controls.rudderRoll * dt * 0.001))
+
+
+movement : Float -> Controls -> Rigidbody -> Rigidbody
+movement dt controls rigidbody =
+    rigidbody
+        |> Rigidbody.translateRelative (Vector.back |> Vector.scale -(controls.throttle * controls.enginePower * dt))
 
 
 
@@ -57,7 +56,6 @@ type alias Model =
     , controls : Controls
     , timing : Timing
     , keybinds : Dict String ( Msg, Msg )
-    , orientation : Orientation
     }
 
 
@@ -84,7 +82,6 @@ init _ =
             , ( "e", ( SteeringRollInput 1, SteeringRollInput 0 ) )
             ]
         )
-        Orientation.new
     , Cmd.none
     )
 
@@ -101,36 +98,27 @@ type Msg
     | ThrottleInput Float
 
 
-physicsUpdate : Controls -> Float -> Orientation -> Orientation
-physicsUpdate controls dt orientation =
-    orientation
+physicsUpdate : Controls -> Float -> Rigidbody -> Rigidbody
+physicsUpdate controls dt rigidbody =
+    rigidbody
         |> rotation dt controls
-
-
-
--- |> Rigidbody.step dt
--- |> rotation dt controls
--- |> movement dt controls
+        |> Rigidbody.step dt
+        -- |> rotation dt controls
+        |> movement dt controls
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Tick dt ->
-            -- let
-            --     ( newTiming, newParticle ) =
-            --         Timing.fixedUpdate (physicsUpdate model.controls) dt ( model.timing, model.orientation )
-            -- in
+            let
+                ( newTiming, newParticle ) =
+                    Timing.fixedUpdate (physicsUpdate model.controls) dt ( model.timing, model.particle )
+            in
             ( { model
-                | orientation =
-                    model.orientation
-                        |> rotation dt model.controls
-                , particle =
-                    model.particle
-                        |> movement model.controls model.orientation
-                        |> Rigidbody.step dt
-
-                -- , timing = newTiming
+                | particle =
+                    newParticle
+                , timing = newTiming
               }
             , Cmd.none
             )
@@ -431,20 +419,23 @@ viewQuaternionDump quaternion =
         ]
 
 
-viewOrientationDisplay : Orientation -> Svg msg
-viewOrientationDisplay orientation =
+viewOrientationDisplay : Rigidbody -> Svg msg
+viewOrientationDisplay rigidbody =
     let
         pitch =
-            orientation
-                |> Orientation.pitchAngle
+            rigidbody.orientation
+                |> Quaternion.xToEuler
+                |> radToDegrees
 
         yaw =
-            orientation
-                |> Orientation.yawAngle
+            rigidbody.orientation
+                |> Quaternion.yToEuler
+                |> radToDegrees
 
         roll =
-            orientation
-                |> Orientation.rollAngle
+            rigidbody.orientation
+                |> Quaternion.zToEuler
+                |> radToDegrees
 
         viewHorizontalLine i =
             Svg.g [ Svg.Attributes.transform ("translate(0, " ++ ((pitch * 3) - i * 3 |> String.fromFloat) ++ ")") ]
@@ -508,14 +499,7 @@ viewOrientationDisplay orientation =
                 , Svg.g [] (List.range 0 12 |> List.map (\n -> toFloat (n * 30)) |> List.map viewVerticalLine)
                 ]
             ]
-        , Html.p [] [ Html.text (Orientation.toVector orientation |> Debug.toString) ]
         ]
-
-
-
--- x = cos(yaw)cos(pitch)
--- y = sin(yaw)cos(pitch)
--- z = sin(pitch)
 
 
 view : Model -> Html Msg
@@ -546,7 +530,7 @@ view model =
                     viewQuaternionDump model.particle.orientation
 
                 OrientationDisplay ->
-                    viewOrientationDisplay model.orientation
+                    viewOrientationDisplay model.particle
     in
     main_ [ Html.Attributes.id "app" ]
         (List.map viewModule model.modules)
